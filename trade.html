@@ -34,6 +34,13 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--red)}
 .carcard .yr{font-family:'Oswald',sans-serif;font-size:26px;text-transform:uppercase;line-height:1.05}
 .carcard .dt{color:var(--mut);font-size:13px;margin-top:5px}
 .carcard .chk{color:#1a8f42;font-weight:700;font-size:13px;margin-top:10px}
+.carimg{position:relative;height:150px;margin:-4px 0 14px;display:flex;align-items:center;justify-content:center}
+.carimg img{max-width:100%;max-height:150px;object-fit:contain;opacity:0;transition:opacity .5s;position:relative;z-index:2}
+.carimg.loaded img{opacity:1}
+.carimg .silh{font-size:66px;filter:grayscale(.2)}
+.carimg .sk{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:.25;animation:pulse 1.2s infinite}
+.carimg.loaded .sk{display:none}
+@keyframes pulse{50%{opacity:.5}}
 /* option chips */
 .opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px}
 .opt{border:1.5px solid var(--line);border-radius:12px;padding:16px 14px;cursor:pointer;background:var(--panel);transition:all .15s;text-align:left}
@@ -52,6 +59,8 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--red)}
 .photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .photo.done{border-style:solid;border-color:#1a8f42}
 .photo .badge{position:absolute;top:6px;right:6px;background:#1a8f42;color:#fff;font-size:11px;font-weight:700;padding:3px 8px;border-radius:20px;z-index:2}
+.photo.req{border-color:#e0b8bf}
+.photo .reqd{position:absolute;top:6px;left:6px;background:var(--red);color:#fff;font-size:9.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:2px 7px;border-radius:20px;z-index:2}
 .photo input{display:none}
 /* buttons */
 .nav{display:flex;gap:12px;padding:20px 0 30px;margin-top:16px}
@@ -82,7 +91,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--red)}
 </div>
 <script>
 const SMS="+14632140522";
-const state={vin:"",car:"",mileage:"",cond:{},owe:"",lender:"",payoff:"",name:"",phone:"",email:"",when:"",photos:{}};
+const state={vin:"",car:"",make:"",model:"",body:"",mileage:"",cond:{},owe:"",lender:"",payoff:"",name:"",phone:"",email:"",when:"",photos:{}};
 let step=0;
 const steps=[
  {id:"intro"},{id:"vin"},{id:"mileage"},{id:"exterior"},{id:"tires"},{id:"mech"},
@@ -125,17 +134,28 @@ function render(){
  if(s==="mech") h=optStep("mech","How does it run?","Mechanical condition & history.",[
    ["💚","Runs great","No known issues"],["🟡","Minor stuff","A light or small item"],
    ["🔴","Needs work","Known mechanical issue"],["🚩","Accident/branded","Prior accident or title brand"]]);
- if(s==="photos") h=`
-  <div class="step on"><div class="coach"><span class="ic">📸</span><div>A few photos let Bryan value your trade accurately — often higher than a sight-unseen number. Takes 30 seconds.</div></div>
-  <h2>Snap a few photos</h2><p class="hint">Tap each one to take or choose a photo. The odometer shot is the important one!</p>
+ if(s==="photos"){
+  const req=["front","rear","driver","pass","tread","odo"];
+  const doneCount=req.filter(k=>state.photos[k]).length;
+  h=`
+  <div class="step on"><div class="coach"><span class="ic">📸</span><div><b>Photos = an accurate, honest number.</b> The clearer you show tread depth and any dings, the more we can put toward your trade. This is the most important step.</div></div>
+  <h2>Show me the details</h2><p class="hint">Tap each to snap a photo. We need all six to give you a real value.</p>
   <div class="photogrid" id="pg">
-   ${photoTile("front","🚗","Front 3/4","corner view")}
-   ${photoTile("rear","🔙","Rear","back of vehicle")}
-   ${photoTile("interior","💺","Interior","dash & seats")}
-   ${photoTile("odo","🔢","Odometer","the mileage")}
+   ${photoTile("front","🚗","Front Corner","angled front view",true)}
+   ${photoTile("rear","🔙","Rear Corner","angled back view",true)}
+   ${photoTile("driver","↔️","Driver Side","full side — show any dings",true)}
+   ${photoTile("pass","↔️","Passenger Side","full side — show any dings",true)}
+   ${photoTile("tread","🛞","Tire Tread","close-up — how deep is the tread?",true)}
+   ${photoTile("odo","🔢","Odometer","the mileage reading",true)}
   </div>
-  <button class="skip" onclick="go(1)">I'll send photos later →</button>
-  <div class="nav"><button class="btn back" onclick="go(-1)">Back</button><button class="btn next" onclick="go(1)">Continue →</button></div></div>`;
+  <div style="margin:6px 0 4px;font-size:13px;color:var(--mut)"><b>${doneCount}/6</b> done ${doneCount<6?'· a few more to go':'· perfect 👌'}</div>
+  <div class="coach" style="margin-top:14px;background:#fff5f6;border-color:var(--red)"><span class="ic">🔎</span><div>Got a dent, scratch, cracked glass, or worn tire? <b>Add a close-up below</b> — showing it honestly gets you a fair number with no surprises later.</div></div>
+  <div class="photogrid" style="margin-top:12px">
+   ${photoTile("dmg1","⚠️","Damage / Wear","optional close-up",false)}
+   ${photoTile("dmg2","⚠️","Damage / Wear","optional close-up",false)}
+  </div>
+  <div class="nav"><button class="btn back" onclick="go(-1)">Back</button><button class="btn next" id="pnext" ${doneCount>=6?'':'disabled'} onclick="go(1)">${doneCount>=6?'Continue →':`Add ${6-doneCount} more photo${6-doneCount>1?'s':''}`}</button></div></div>`;
+ }
  if(s==="payoff") h=`
   <div class="step on"><div class="coach"><span class="ic">💳</span><div>If you still owe on it, that's totally normal — knowing your payoff lets Bryan structure the whole deal, trade equity and all.</div></div>
   <h2>Do you still owe on it?</h2><p class="hint">Optional, but it helps us build your real numbers.</p>
@@ -182,9 +202,10 @@ function optStep(key,title,hint,opts){
   opts.map(o=>`<div class="opt ${state.cond[key]===o[1]?'sel':''}" onclick="pick('${key}','${o[1]}')"><span class="em">${o[0]}</span><div class="t">${o[1]}</div><div class="s">${o[2]}</div></div>`).join('')
  }</div><div class="nav"><button class="btn back" onclick="go(-1)">Back</button><button class="btn next" id="onext" ${state.cond[key]?'':'disabled'} onclick="go(1)">Continue →</button></div></div>`;
 }
-function photoTile(k,em,label,sub){
+function photoTile(k,em,label,sub,req){
  const p=state.photos[k];
- return `<label class="photo ${p?'done':''}">${p?`<span class="badge">✓</span><img src="${p}">`:`<span class="pem">${em}</span><span class="pl">${label}</span><span class="ps">${sub}</span>`}<input type="file" accept="image/*" capture="environment" onchange="onPhoto('${k}',this)"></label>`;
+ const star=req&&!p?'<span class="reqd">Required</span>':'';
+ return `<label class="photo ${p?'done':''} ${req?'req':''}">${star}${p?`<span class="badge">✓</span><img src="${p}">`:`<span class="pem">${em}</span><span class="pl">${label}</span><span class="ps">${sub}</span>`}<input type="file" accept="image/*" capture="environment" onchange="onPhoto('${k}',this)"></label>`;
 }
 function pick(k,v){state.cond[k]=v;render();}
 function setOwe(v){state.owe=v;render();}
@@ -194,7 +215,13 @@ function onVin(v){state.vin=v.toUpperCase();document.getElementById('vin').value
  if(state.vin.length===17)decode(state.vin);}
 function noVin(){state.car="My vehicle (VIN not provided)";document.getElementById('vnext').disabled=false;
  const c=document.getElementById('carcard');c.style.display='block';c.innerHTML=`<div class="yr">No problem</div><div class="dt">We'll confirm the details when Bryan reviews your trade.</div>`;}
-function carHTML(){return `<div class="yr">${state.car}</div><div class="dt">${state.cardetail||''}</div><div class="chk">✓ Vehicle confirmed</div>`;}
+function bodyEmoji(){const b=state.body||'';if(b.includes('pickup')||b.includes('truck'))return '🛻';if(b.includes('suv')||b.includes('sport utility')||b.includes('crossover'))return '🚙';if(b.includes('van'))return '🚐';return '🚗';}
+function carHTML(){
+ const mk=encodeURIComponent(state.make),md=encodeURIComponent((state.model||'').split(' ')[0]);
+ const img=mk&&md?`https://cdn.imagin.studio/getImage?customer=hrjavascript-mastery&make=${mk}&modelFamily=${md}&angle=23&width=560`:'';
+ const pic=img?`<div class="carimg"><img src="${img}" alt="${state.car}" onload="this.parentNode.classList.add('loaded')" onerror="this.parentNode.innerHTML='<div class=silh>'+bodyEmoji()+'</div>'"><div class="silh sk">${bodyEmoji()}</div></div>`:`<div class="carimg loaded"><div class="silh">${bodyEmoji()}</div></div>`;
+ return `${pic}<div class="yr">${state.car}</div><div class="dt">${state.cardetail||''}</div><div class="chk">✓ That's your ride — let's value it</div>`;
+}
 async function decode(vin){
  const dec=document.getElementById('dec');dec.style.display='flex';
  const cc=document.getElementById('carcard');cc.style.display='none';
@@ -203,7 +230,7 @@ async function decode(vin){
   const j=await r.json();const d=j.Results[0]||{};
   const parts=[d.ModelYear,d.Make,d.Model,d.Trim].filter(Boolean);
   if(parts.length>=3){
-   state.car=parts.join(' ');
+   state.car=parts.join(' ');state.make=d.Make||'';state.model=d.Model||'';state.body=(d.BodyClass||'').toLowerCase();
    state.cardetail=[d.EngineCylinders?d.EngineCylinders+'-cyl':'',d.DisplacementL?d.DisplacementL+'L':'',d.DriveType,d.FuelTypePrimary].filter(Boolean).join(' · ');
    cc.style.display='block';cc.innerHTML=carHTML();document.getElementById('vnext').disabled=false;
   }else{cc.style.display='block';cc.innerHTML=`<div class="yr">Hmm — double-check that VIN</div><div class="dt">Or tap "I don't have my VIN handy" below and we'll sort it out.</div>`;}
