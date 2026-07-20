@@ -1,5 +1,5 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>2027 GMC Denali Allocation — Reserve Your Build Spot | Coup's Automotive Solutions</title>
+<title>2027 GMC Yukon — First-Round Ordering 7/30 | Reserve Your Allocation | Coup's Automotive Solutions</title>
 <meta name="description" content="2027 GMC Denali & Denali Ultimate ordering opens soon. We have limited allocation — reserve your build spot before it's gone. Sierra & Yukon Denali/Ultimate.">
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -53,13 +53,27 @@ footer{padding:34px 0;text-align:center;color:#8a867d;font-size:12px;border-top:
 <div class="wrap">
 <div class="bar"><a href="index.html">‹ Coup's Automotive Solutions</a></div>
 <div class="hero">
-  <p class="eb">🔑 The Access List · 2027 Model Year</p>
-  <h1>2027 GMC Denali<br><span>Ordering Opens Soon</span></h1>
-  <p>We've been granted <b>limited 2027 Denali &amp; Denali Ultimate allocation</b> — and spots are already being claimed. Lock in your exact build before ordering opens. Once our slots are full, they're gone until the next round.</p>
+  <p class="eb">🔑 The Access List · First-Round Ordering July 30</p>
+  <h1>2027 GMC Yukon<br><span>First-Round Ordering July 30</span></h1>
+  <p>Our first-round 2027 Yukon order goes in <b>July 30</b> — and we have <b>8 of our 12 allocations left</b>. Lock in your exact Yukon Denali or Denali Ultimate build now, before the round fills. Miss it and you're waiting for round two.</p>
   <div class="count" id="count"></div>
   <div class="cl" id="cl">Until ordering opens</div>
 </div>
 
+<div class="signup">
+  <div class="su-l"><div class="su-eb">⚡ 8 of 12 spots remaining · ordering closes July 30</div>
+  <div class="su-h">Sign Up Now — Lock Your Yukon Slot</div>
+  <div class="su-p">No deposit to reserve. Pick your build, we hold your allocation, and your order goes in first when the round opens.</div></div>
+  <a class="su-btn" href="sms:+14632140522?&body=Bryan%20—%20SIGN%20ME%20UP%20for%20a%202027%20Yukon%20allocation.%20I%20want:%20">Reserve My Slot →</a>
+</div>
+<style>
+.signup{background:linear-gradient(135deg,var(--red),#9c0c24);border-radius:18px;padding:26px 30px;margin-bottom:26px;display:flex;align-items:center;justify-content:space-between;gap:22px;color:#fff;box-shadow:0 18px 40px rgba(200,16,46,.28)}
+.signup .su-eb{font-size:12px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;color:#ffd8de;margin-bottom:6px}
+.signup .su-h{font-family:'Oswald',sans-serif;font-size:24px;text-transform:uppercase;line-height:1.1;margin-bottom:6px}
+.signup .su-p{font-size:13.5px;color:#ffe4e8;max-width:440px}
+.signup .su-btn{background:#fff;color:var(--red) !important;text-decoration:none;font-weight:700;font-size:16px;padding:16px 30px;border-radius:12px;white-space:nowrap;box-shadow:0 10px 22px rgba(0,0,0,.2)}
+@media(max-width:700px){.signup{flex-direction:column;text-align:center}.signup .su-p{margin:0 auto}.signup .su-btn{width:100%;text-align:center}}
+</style>
 <div class="intro">
   <h2>How Reserving a Build Spot Works</h2>
   <p>Ordering a Denali the way it should be: you pick the exact truck, we lock your allocation slot, and it's built to your spec at the factory — no fighting over whatever lands on the lot.</p>
@@ -72,7 +86,7 @@ footer{padding:34px 0;text-align:center;color:#8a867d;font-size:12px;border-top:
 </div>
 
 <p class="eyebrow">Live Allocation Board</p>
-<h2 class="sec">Our 2027 Denali Slots</h2>
+<h2 class="sec">Our 12 Yukon Allocations — 8 Left</h2>
 <p class="lead">Green = open to claim · Gray = already spoken for. Updated as spots fill — first text, first hold.</p>
 
 <div id="board"></div>
@@ -87,14 +101,11 @@ footer{padding:34px 0;text-align:center;color:#8a867d;font-size:12px;border-top:
 </div>
 <script>
 // ORDER DATE — edit this when GM confirms. Default: 14 days out.
-const ORDER_DATE = new Date(Date.now() + 14*24*3600*1000);
+const ORDER_DATE = new Date('2026-07-30T09:00:00');
 // ALLOCATION — edit counts as spots fill. status: 'open' or 'taken'
 const ALLOC = [
- {model:"2027 Sierra 1500 Denali", slots:["taken","taken","open","open","open","open"]},
- {model:"2027 Sierra 1500 Denali Ultimate", slots:["taken","open","open","open"]},
- {model:"2027 Yukon Denali", slots:["taken","taken","open","open","open"]},
- {model:"2027 Yukon Denali Ultimate", slots:["taken","open","open"]},
- {model:"2027 Sierra HD Denali Ultimate", slots:["open","open"]},
+ {model:"2027 Yukon Denali", slots:["taken","taken","open","open","open","open","open"]},
+ {model:"2027 Yukon Denali Ultimate", slots:["taken","taken","open","open","open"]},
 ];
 const SMS="+14632140522";
 function pad(n){return String(n).padStart(2,'0');}
