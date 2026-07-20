@@ -80,6 +80,16 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--red)}
 .reveal .card .row .k{color:var(--mut)}
 .reveal .card .row .v{font-weight:700}
 .reveal .note{background:#fff5f6;border:1px solid #f5c9d0;border-radius:12px;padding:14px;font-size:13px;color:#8a2230;margin-bottom:18px}
+.doczone{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;border:2px dashed var(--line);border-radius:16px;padding:32px 16px;cursor:pointer;background:var(--panel);margin-bottom:16px;transition:border-color .15s}
+.doczone:hover{border-color:var(--red)}
+.doczone .dz-em{font-size:30px}.doczone .dz-t{font-weight:700;font-size:15px}.doczone .dz-s{font-size:12px;color:var(--mut)}
+.doczone input{display:none}
+.docs{display:flex;flex-direction:column;gap:8px;margin-bottom:8px}
+.docitem{display:flex;align-items:center;gap:10px;background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+.docitem img{width:38px;height:38px;object-fit:cover;border-radius:6px}
+.docitem .pdf{width:38px;height:38px;display:flex;align-items:center;justify-content:center;background:var(--red);color:#fff;font-size:10px;font-weight:700;border-radius:6px}
+.docitem .dn{flex:1;font-size:13px;font-weight:600}
+.docitem .rm{background:none;border:none;color:var(--mut);font-size:16px;cursor:pointer;padding:4px}
 .hide{display:none!important}
 @media(max-width:440px){.opts{grid-template-columns:1fr}}
 </style></head><body>
@@ -91,11 +101,11 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--red)}
 </div>
 <script>
 const SMS="+14632140522";
-const state={vin:"",car:"",make:"",model:"",body:"",mileage:"",cond:{},owe:"",lender:"",payoff:"",name:"",phone:"",email:"",when:"",photos:{}};
+const state={vin:"",car:"",make:"",model:"",body:"",mileage:"",cond:{},owe:"",lender:"",payoff:"",name:"",phone:"",email:"",when:"",photos:{},docs:[]};
 let step=0;
 const steps=[
  {id:"intro"},{id:"vin"},{id:"mileage"},{id:"exterior"},{id:"tires"},{id:"mech"},
- {id:"photos"},{id:"payoff"},{id:"contact"},{id:"done"}
+ {id:"photos"},{id:"docs"},{id:"payoff"},{id:"contact"},{id:"done"}
 ];
 const stage=document.getElementById("stage");
 function setProg(){document.getElementById("bar").style.width=(step/(steps.length-1)*100)+"%";
@@ -156,6 +166,18 @@ function render(){
   </div>
   <div class="nav"><button class="btn back" onclick="go(-1)">Back</button><button class="btn next" id="pnext" ${doneCount>=6?'':'disabled'} onclick="go(1)">${doneCount>=6?'Continue →':`Add ${6-doneCount} more photo${6-doneCount>1?'s':''}`}</button></div></div>`;
  }
+ if(s==="docs"){
+  h=`
+  <div class="step on"><div class="coach"><span class="ic">📄</span><div><b>Got service records or repair receipts?</b> Upload them here — new tires, brakes, or maintenance history can <b>raise your trade value</b>. Totally optional, but it pays off.</div></div>
+  <h2>Any documents to send in?</h2><p class="hint">Service records · repair receipts · window sticker · title/registration — photo or PDF, as many as you like.</p>
+  <label class="doczone">
+   <span class="dz-em">⬆️</span><span class="dz-t">Tap to scan or upload documents</span><span class="dz-s">Photos or PDFs</span>
+   <input type="file" accept="image/*,application/pdf" multiple capture="environment" onchange="onDocs(this)">
+  </label>
+  <div id="doclist">${docListHTML()}</div>
+  <button class="skip" onclick="go(1)">No documents — skip →</button>
+  <div class="nav"><button class="btn back" onclick="go(-1)">Back</button><button class="btn next" onclick="go(1)">Continue →</button></div></div>`;
+ }
  if(s==="payoff") h=`
   <div class="step on"><div class="coach"><span class="ic">💳</span><div>If you still owe on it, that's totally normal — knowing your payoff lets Bryan structure the whole deal, trade equity and all.</div></div>
   <h2>Do you still owe on it?</h2><p class="hint">Optional, but it helps us build your real numbers.</p>
@@ -187,6 +209,7 @@ function render(){
     <div class="row"><span class="k">Miles</span><span class="v">${state.mileage||'—'}</span></div>
     <div class="row"><span class="k">Condition</span><span class="v">${state.cond.exterior||'—'} / ${state.cond.mech||'—'}</span></div>
     <div class="row"><span class="k">Photos ready</span><span class="v">${photolist.length}/4</span></div>
+    <div class="row"><span class="k">Documents</span><span class="v">${state.docs.length?state.docs.length+" attached":"none"}</span></div>
     <div class="row"><span class="k">Payoff</span><span class="v">${state.owe==='yes'?(state.payoff||'has loan'):'paid off'}</span></div>
    </div>
    ${photolist.length?`<div class="note">📎 Almost done — tap the button, then <b>attach the ${photolist.length} photo${photolist.length>1?'s':''} you just took</b> in your messages so Bryan can finalize your number.</div>`:''}
@@ -210,6 +233,20 @@ function photoTile(k,em,label,sub,req){
 function pick(k,v){state.cond[k]=v;render();}
 function setOwe(v){state.owe=v;render();}
 function onPhoto(k,inp){const f=inp.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{state.photos[k]=e.target.result;render();};r.readAsDataURL(f);}
+function onDocs(inp){
+ for(const f of inp.files){
+  const isImg=f.type.startsWith('image/');
+  const item={name:f.name,type:f.type,thumb:''};
+  if(isImg){const r=new FileReader();r.onload=e=>{item.thumb=e.target.result;render();};r.readAsDataURL(f);}
+  state.docs.push(item);
+ }
+ render();
+}
+function rmDoc(i){state.docs.splice(i,1);render();}
+function docListHTML(){
+ if(!state.docs.length)return '';
+ return '<div class="docs">'+state.docs.map((d,i)=>`<div class="docitem">${d.thumb?`<img src="${d.thumb}">`:'<span class="pdf">PDF</span>'}<span class="dn">${d.name.slice(0,22)}</span><button class="rm" onclick="rmDoc(${i})">✕</button></div>`).join('')+'</div>';
+}
 function chkC(){const b=document.getElementById('cnext');if(b)b.disabled=!(state.name&&state.phone);}
 function onVin(v){state.vin=v.toUpperCase();document.getElementById('vin').value=state.vin;
  if(state.vin.length===17)decode(state.vin);}
@@ -251,6 +288,7 @@ function sendToBryan(){
  if(state.when)L.push("Best time: "+state.when);
  const pc=Object.keys(state.photos).filter(k=>state.photos[k]).length;
  if(pc)L.push("("+pc+" photos attached below)");
+ if(state.docs.length)L.push("("+state.docs.length+" document(s) to attach)");
  const body=encodeURIComponent(L.join("\n"));
  window.location.href=`sms:${SMS}?&body=${body}`;
 }
