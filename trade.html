@@ -1,0 +1,231 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Value Your Trade — Coup's Automotive Solutions</title>
+<meta name="description" content="Get a fair, honest value on your trade — a guided walkthrough, then a real number from Bryan within the hour. No lowball algorithms.">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--red:#c8102e;--bg:#faf9f7;--panel:#ffffff;--line:#e7e4de;--txt:#111114;--mut:#6b6862;--soft:#f4f2ee}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--txt);line-height:1.55;-webkit-font-smoothing:antialiased}
+.shell{max-width:640px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;padding:0 20px}
+/* top bar */
+.bar{display:flex;align-items:center;gap:12px;padding:18px 0 10px}
+.bar .logo{font-family:'Oswald',sans-serif;font-weight:700;text-transform:uppercase;font-size:15px;letter-spacing:.02em}
+.bar .logo b{color:var(--red)}
+.prog{height:5px;background:var(--soft);border-radius:20px;overflow:hidden;margin-bottom:6px}
+.prog span{display:block;height:100%;width:0;background:var(--red);border-radius:20px;transition:width .45s cubic-bezier(.4,0,.2,1)}
+.stepn{font-size:11px;color:var(--mut);letter-spacing:.04em;text-transform:uppercase;margin-bottom:20px}
+/* step card */
+.stage{flex:1;position:relative}
+.step{position:absolute;inset:0;opacity:0;transform:translateX(28px);transition:opacity .4s,transform .4s;pointer-events:none;overflow-y:auto}
+.step.on{opacity:1;transform:none;pointer-events:auto;position:relative}
+.coach{display:flex;gap:10px;align-items:flex-start;background:var(--soft);border-left:3px solid var(--red);border-radius:10px;padding:12px 14px;margin-bottom:20px;font-size:13.5px;color:var(--mut)}
+.coach .ic{font-size:18px;line-height:1.2}
+h2{font-family:'Oswald',sans-serif;font-size:clamp(24px,5vw,32px);text-transform:uppercase;line-height:1.1;margin-bottom:8px}
+.hint{color:var(--mut);font-size:14px;margin-bottom:22px}
+label.fld{display:block;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--mut);font-weight:600;margin:0 0 7px}
+input,select,textarea{width:100%;padding:15px 16px;border:1.5px solid var(--line);border-radius:12px;font-size:16px;font-family:inherit;background:var(--panel);color:var(--txt);margin-bottom:16px}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--red)}
+.vinrow{display:flex;gap:10px}.vinrow input{flex:1;text-transform:uppercase;letter-spacing:.06em}
+.decoding{display:none;align-items:center;gap:10px;color:var(--mut);font-size:14px;margin-bottom:16px}
+.spin{width:18px;height:18px;border:2.5px solid var(--line);border-top-color:var(--red);border-radius:50%;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.carcard{display:none;background:var(--panel);border:2px solid var(--red);border-radius:16px;padding:20px;margin-bottom:18px;animation:pop .5s cubic-bezier(.34,1.56,.64,1)}
+@keyframes pop{0%{transform:scale(.9);opacity:0}100%{transform:scale(1);opacity:1}}
+.carcard .yr{font-family:'Oswald',sans-serif;font-size:26px;text-transform:uppercase;line-height:1.05}
+.carcard .dt{color:var(--mut);font-size:13px;margin-top:5px}
+.carcard .chk{color:#1a8f42;font-weight:700;font-size:13px;margin-top:10px}
+/* option chips */
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px}
+.opt{border:1.5px solid var(--line);border-radius:12px;padding:16px 14px;cursor:pointer;background:var(--panel);transition:all .15s;text-align:left}
+.opt:hover{border-color:#c9c4ba}
+.opt.sel{border-color:var(--red);background:#fff5f6;box-shadow:0 0 0 3px rgba(200,16,46,.08)}
+.opt .em{font-size:22px;display:block;margin-bottom:6px}
+.opt .t{font-weight:700;font-size:14px}
+.opt .s{font-size:12px;color:var(--mut);margin-top:2px}
+/* photos */
+.photogrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:8px}
+.photo{position:relative;border:2px dashed var(--line);border-radius:14px;aspect-ratio:4/3;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;background:var(--panel);overflow:hidden;transition:border-color .15s}
+.photo:hover{border-color:var(--red)}
+.photo .pem{font-size:26px}
+.photo .pl{font-size:12.5px;font-weight:600;margin-top:6px;text-align:center;padding:0 8px}
+.photo .ps{font-size:11px;color:var(--mut)}
+.photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.photo.done{border-style:solid;border-color:#1a8f42}
+.photo .badge{position:absolute;top:6px;right:6px;background:#1a8f42;color:#fff;font-size:11px;font-weight:700;padding:3px 8px;border-radius:20px;z-index:2}
+.photo input{display:none}
+/* buttons */
+.nav{display:flex;gap:12px;padding:20px 0 30px;margin-top:16px}
+.btn{flex:1;padding:16px;border-radius:12px;font-size:16px;font-weight:700;font-family:inherit;border:none;cursor:pointer;text-align:center;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:8px}
+.next{background:var(--red);color:#fff;box-shadow:0 12px 26px rgba(200,16,46,.28)}
+.next:disabled{opacity:.4;box-shadow:none;cursor:not-allowed}
+.back{flex:0 0 auto;background:var(--panel);border:1.5px solid var(--line);color:var(--txt);padding:16px 22px}
+.skip{background:none;border:none;color:var(--mut);font-size:13px;text-decoration:underline;cursor:pointer;font-family:inherit;margin-top:-4px}
+/* reveal */
+.reveal{text-align:center;padding:20px 0}
+.reveal .big{font-size:56px;margin-bottom:10px;animation:pop .6s cubic-bezier(.34,1.56,.64,1)}
+.reveal h2{margin-bottom:14px}
+.reveal p{color:var(--mut);font-size:15px;margin-bottom:8px}
+.reveal .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:24px;margin:24px 0;text-align:left}
+.reveal .card .row{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--soft);font-size:14px}
+.reveal .card .row:last-child{border:0}
+.reveal .card .row .k{color:var(--mut)}
+.reveal .card .row .v{font-weight:700}
+.reveal .note{background:#fff5f6;border:1px solid #f5c9d0;border-radius:12px;padding:14px;font-size:13px;color:#8a2230;margin-bottom:18px}
+.hide{display:none!important}
+@media(max-width:440px){.opts{grid-template-columns:1fr}}
+</style></head><body>
+<div class="shell">
+  <div class="bar"><div class="logo">COUP'S <b>TRADE</b></div></div>
+  <div class="prog"><span id="bar"></span></div>
+  <div class="stepn" id="stepn">Getting started</div>
+  <div class="stage" id="stage"></div>
+</div>
+<script>
+const SMS="+14632140522";
+const state={vin:"",car:"",mileage:"",cond:{},owe:"",lender:"",payoff:"",name:"",phone:"",email:"",when:"",photos:{}};
+let step=0;
+const steps=[
+ {id:"intro"},{id:"vin"},{id:"mileage"},{id:"exterior"},{id:"tires"},{id:"mech"},
+ {id:"photos"},{id:"payoff"},{id:"contact"},{id:"done"}
+];
+const stage=document.getElementById("stage");
+function setProg(){document.getElementById("bar").style.width=(step/(steps.length-1)*100)+"%";
+ document.getElementById("stepn").textContent = step===0?"Getting started":step===steps.length-1?"All done":`Step ${step} of ${steps.length-2}`;}
+
+function render(){
+ setProg();
+ const s=steps[step].id;
+ let h="";
+ if(s==="intro") h=`
+  <div class="step on"><h2>Let's value your trade — the honest way.</h2>
+  <p class="hint">A few quick questions, a couple photos, and Bryan personally gets you a real number within the hour. No lowball algorithms, no games.</p>
+  <div class="coach"><span class="ic">🤝</span><div>Most "instant offer" tools spit out a computer number that's low on purpose. We do it different — you'll get a fair, real value from a person who wants your business.</div></div>
+  <div class="nav"><button class="btn next" onclick="go(1)">Start My Trade Value →</button></div></div>`;
+ if(s==="vin") h=`
+  <div class="step on"><div class="coach"><span class="ic">✨</span><div>Type your VIN and watch your vehicle appear — it's on your registration, insurance card, or the driver's-door jamb.</div></div>
+  <h2>What are you trading?</h2><p class="hint">Enter your 17-character VIN and we'll fill in the rest.</p>
+  <label class="fld">Vehicle VIN</label>
+  <div class="vinrow"><input id="vin" maxlength="17" placeholder="1GKS2DKL8..." value="${state.vin}" oninput="onVin(this.value)"></div>
+  <div class="decoding" id="dec"><div class="spin"></div> Decoding your vehicle…</div>
+  <div class="carcard" id="carcard"></div>
+  <button class="skip" onclick="noVin()">I don't have my VIN handy →</button>
+  <div class="nav"><button class="btn back" onclick="go(-1)">Back</button><button class="btn next" id="vnext" ${state.car?"":"disabled"} onclick="go(1)">Continue →</button></div></div>`;
+ if(s==="mileage") h=`
+  <div class="step on"><div class="coach"><span class="ic">📊</span><div>Mileage is the #1 driver of value. Be honest — an accurate number means an accurate offer and no surprises at delivery.</div></div>
+  <h2>How many miles?</h2><p class="hint">${state.car||"Your vehicle"}</p>
+  <label class="fld">Odometer reading</label>
+  <input id="mileage" type="tel" inputmode="numeric" placeholder="e.g. 42,500" value="${state.mileage}" oninput="state.mileage=this.value;document.getElementById('mnext').disabled=!this.value">
+  <div class="nav"><button class="btn back" onclick="go(-1)">Back</button><button class="btn next" id="mnext" ${state.mileage?"":"disabled"} onclick="go(1)">Continue →</button></div></div>`;
+ if(s==="exterior") h=optStep("exterior","How's the outside look?","Paint, body, glass — pick the closest.",[
+   ["🌟","Excellent","Like new, no issues"],["👍","Good","Minor wear, a scratch or two"],
+   ["🔧","Fair","Some dents or paint issues"],["🛠️","Rough","Needs real work"]]);
+ if(s==="tires") h=optStep("tires","How are the tires?","A quick honest guess is fine.",[
+   ["🆕","Newer","Lots of tread left"],["✅","Good","Plenty of life"],
+   ["〰️","Worn","Getting close"],["❗","Need replacing","Bald or damaged"]]);
+ if(s==="mech") h=optStep("mech","How does it run?","Mechanical condition & history.",[
+   ["💚","Runs great","No known issues"],["🟡","Minor stuff","A light or small item"],
+   ["🔴","Needs work","Known mechanical issue"],["🚩","Accident/branded","Prior accident or title brand"]]);
+ if(s==="photos") h=`
+  <div class="step on"><div class="coach"><span class="ic">📸</span><div>A few photos let Bryan value your trade accurately — often higher than a sight-unseen number. Takes 30 seconds.</div></div>
+  <h2>Snap a few photos</h2><p class="hint">Tap each one to take or choose a photo. The odometer shot is the important one!</p>
+  <div class="photogrid" id="pg">
+   ${photoTile("front","🚗","Front 3/4","corner view")}
+   ${photoTile("rear","🔙","Rear","back of vehicle")}
+   ${photoTile("interior","💺","Interior","dash & seats")}
+   ${photoTile("odo","🔢","Odometer","the mileage")}
+  </div>
+  <button class="skip" onclick="go(1)">I'll send photos later →</button>
+  <div class="nav"><button class="btn back" onclick="go(-1)">Back</button><button class="btn next" onclick="go(1)">Continue →</button></div></div>`;
+ if(s==="payoff") h=`
+  <div class="step on"><div class="coach"><span class="ic">💳</span><div>If you still owe on it, that's totally normal — knowing your payoff lets Bryan structure the whole deal, trade equity and all.</div></div>
+  <h2>Do you still owe on it?</h2><p class="hint">Optional, but it helps us build your real numbers.</p>
+  <div class="opts" style="margin-bottom:16px">
+   <div class="opt ${state.owe==='yes'?'sel':''}" onclick="setOwe('yes')"><span class="em">📄</span><div class="t">Yes, there's a loan/lease</div></div>
+   <div class="opt ${state.owe==='no'?'sel':''}" onclick="setOwe('no')"><span class="em">✅</span><div class="t">No, it's paid off</div></div>
+  </div>
+  <div id="payfields" class="${state.owe==='yes'?'':'hide'}">
+   <label class="fld">Lender (optional)</label><input placeholder="e.g. GM Financial" value="${state.lender}" oninput="state.lender=this.value">
+   <label class="fld">Approximate payoff (optional)</label><input type="tel" inputmode="numeric" placeholder="e.g. $18,400" value="${state.payoff}" oninput="state.payoff=this.value">
+  </div>
+  <div class="nav"><button class="btn back" onclick="go(-1)">Back</button><button class="btn next" onclick="go(1)">Continue →</button></div></div>`;
+ if(s==="contact") h=`
+  <div class="step on"><div class="coach"><span class="ic">⏱️</span><div>Last step! Bryan reviews every trade personally and texts a real number — usually within the hour.</div></div>
+  <h2>Where do I send your number?</h2>
+  <label class="fld">Your name</label><input placeholder="First & last" value="${state.name}" oninput="state.name=this.value;chkC()">
+  <label class="fld">Cell phone</label><input type="tel" inputmode="tel" placeholder="(317) 555-0100" value="${state.phone}" oninput="state.phone=this.value;chkC()">
+  <label class="fld">Email (optional)</label><input type="email" placeholder="you@email.com" value="${state.email}" oninput="state.email=this.value">
+  <label class="fld">Best time to reach you</label>
+  <select onchange="state.when=this.value"><option value="">Anytime</option><option>Morning</option><option>Afternoon</option><option>Evening</option></select>
+  <div class="nav"><button class="btn back" onclick="go(-1)">Back</button><button class="btn next" id="cnext" ${state.name&&state.phone?"":"disabled"} onclick="finish()">Get My Trade Value →</button></div></div>`;
+ if(s==="done"){
+  const photolist=Object.keys(state.photos).filter(k=>state.photos[k]);
+  h=`<div class="step on reveal"><div class="big">🎯</div><h2>Got it — you're all set!</h2>
+   <p><b>${state.name.split(' ')[0]||'You'}</b>, Bryan is personally reviewing your ${state.car||'trade'} right now.</p>
+   <p>Expect a real, fair number by text — usually within the hour.</p>
+   <div class="card">
+    <div class="row"><span class="k">Vehicle</span><span class="v">${state.car||'—'}</span></div>
+    <div class="row"><span class="k">Miles</span><span class="v">${state.mileage||'—'}</span></div>
+    <div class="row"><span class="k">Condition</span><span class="v">${state.cond.exterior||'—'} / ${state.cond.mech||'—'}</span></div>
+    <div class="row"><span class="k">Photos ready</span><span class="v">${photolist.length}/4</span></div>
+    <div class="row"><span class="k">Payoff</span><span class="v">${state.owe==='yes'?(state.payoff||'has loan'):'paid off'}</span></div>
+   </div>
+   ${photolist.length?`<div class="note">📎 Almost done — tap the button, then <b>attach the ${photolist.length} photo${photolist.length>1?'s':''} you just took</b> in your messages so Bryan can finalize your number.</div>`:''}
+   <button class="btn next" style="width:100%" onclick="sendToBryan()">💬 Send My Trade to Bryan</button>
+   <p style="margin-top:16px;font-size:13px">or call/text Bryan directly at <a href="tel:${SMS}" style="color:var(--red);font-weight:700;text-decoration:none">(463) 214-0522</a></p>
+  </div>`;
+ }
+ stage.innerHTML=h;
+ if(s==="vin"){const c=document.getElementById("carcard");if(state.car){c.style.display="block";c.innerHTML=carHTML();}}
+}
+function optStep(key,title,hint,opts){
+ return `<div class="step on"><h2>${title}</h2><p class="hint">${hint}</p><div class="opts">${
+  opts.map(o=>`<div class="opt ${state.cond[key]===o[1]?'sel':''}" onclick="pick('${key}','${o[1]}')"><span class="em">${o[0]}</span><div class="t">${o[1]}</div><div class="s">${o[2]}</div></div>`).join('')
+ }</div><div class="nav"><button class="btn back" onclick="go(-1)">Back</button><button class="btn next" id="onext" ${state.cond[key]?'':'disabled'} onclick="go(1)">Continue →</button></div></div>`;
+}
+function photoTile(k,em,label,sub){
+ const p=state.photos[k];
+ return `<label class="photo ${p?'done':''}">${p?`<span class="badge">✓</span><img src="${p}">`:`<span class="pem">${em}</span><span class="pl">${label}</span><span class="ps">${sub}</span>`}<input type="file" accept="image/*" capture="environment" onchange="onPhoto('${k}',this)"></label>`;
+}
+function pick(k,v){state.cond[k]=v;render();}
+function setOwe(v){state.owe=v;render();}
+function onPhoto(k,inp){const f=inp.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{state.photos[k]=e.target.result;render();};r.readAsDataURL(f);}
+function chkC(){const b=document.getElementById('cnext');if(b)b.disabled=!(state.name&&state.phone);}
+function onVin(v){state.vin=v.toUpperCase();document.getElementById('vin').value=state.vin;
+ if(state.vin.length===17)decode(state.vin);}
+function noVin(){state.car="My vehicle (VIN not provided)";document.getElementById('vnext').disabled=false;
+ const c=document.getElementById('carcard');c.style.display='block';c.innerHTML=`<div class="yr">No problem</div><div class="dt">We'll confirm the details when Bryan reviews your trade.</div>`;}
+function carHTML(){return `<div class="yr">${state.car}</div><div class="dt">${state.cardetail||''}</div><div class="chk">✓ Vehicle confirmed</div>`;}
+async function decode(vin){
+ const dec=document.getElementById('dec');dec.style.display='flex';
+ const cc=document.getElementById('carcard');cc.style.display='none';
+ try{
+  const r=await fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinValues/${vin}?format=json`);
+  const j=await r.json();const d=j.Results[0]||{};
+  const parts=[d.ModelYear,d.Make,d.Model,d.Trim].filter(Boolean);
+  if(parts.length>=3){
+   state.car=parts.join(' ');
+   state.cardetail=[d.EngineCylinders?d.EngineCylinders+'-cyl':'',d.DisplacementL?d.DisplacementL+'L':'',d.DriveType,d.FuelTypePrimary].filter(Boolean).join(' · ');
+   cc.style.display='block';cc.innerHTML=carHTML();document.getElementById('vnext').disabled=false;
+  }else{cc.style.display='block';cc.innerHTML=`<div class="yr">Hmm — double-check that VIN</div><div class="dt">Or tap "I don't have my VIN handy" below and we'll sort it out.</div>`;}
+ }catch(e){cc.style.display='block';cc.innerHTML=`<div class="yr">We'll confirm it manually</div><div class="dt">Tap continue — Bryan will verify the details.</div>`;document.getElementById('vnext').disabled=false;}
+ dec.style.display='none';
+}
+function go(d){step=Math.max(0,Math.min(steps.length-1,step+d));window.scrollTo(0,0);render();}
+function finish(){go(1);}
+function sendToBryan(){
+ const L=[];
+ L.push("🚗 NEW TRADE from my website:");
+ L.push("Vehicle: "+(state.car||"—"));
+ L.push("Miles: "+(state.mileage||"—"));
+ L.push("Exterior: "+(state.cond.exterior||"—")+" | Tires: "+(state.cond.tires||"—")+" | Runs: "+(state.cond.mech||"—"));
+ if(state.owe==='yes')L.push("Owes: "+(state.lender||"loan")+" ~"+(state.payoff||"?"));else if(state.owe==='no')L.push("Paid off");
+ L.push("Name: "+state.name);L.push("Phone: "+state.phone);
+ if(state.email)L.push("Email: "+state.email);
+ if(state.when)L.push("Best time: "+state.when);
+ const pc=Object.keys(state.photos).filter(k=>state.photos[k]).length;
+ if(pc)L.push("("+pc+" photos attached below)");
+ const body=encodeURIComponent(L.join("\n"));
+ window.location.href=`sms:${SMS}?&body=${body}`;
+}
+render();
+</script></body></html>
