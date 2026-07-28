@@ -136,9 +136,49 @@
     display:grid;place-items:center;font-size:33px;margin:8px 0 18px}
   .demo{background:#16181d;color:#fff;text-align:center;font-size:11px;padding:6px;
     letter-spacing:.06em;text-transform:uppercase}
+
+  /* ── demo framing ──────────────────────────────────────────────── */
+  /* Corner badge rides above everything and never intercepts a tap, so the
+     flow still demos cleanly while nobody can mistake this for the real thing. */
+  .stamp{position:fixed;top:11px;right:11px;z-index:60;pointer-events:none;
+    background:var(--red);color:#fff;font:700 10.5px/1 inherit;letter-spacing:.13em;
+    text-transform:uppercase;padding:7px 11px;border-radius:6px;
+    box-shadow:0 3px 12px rgba(0,0,0,.28)}
+  .gate{position:fixed;inset:0;z-index:70;background:rgba(12,13,16,.72);
+    backdrop-filter:blur(4px);display:grid;place-items:center;padding:24px}
+  .gate[hidden]{display:none}
+  .gate .box{background:#fff;border-radius:16px;padding:26px 24px;max-width:400px;
+    box-shadow:0 24px 60px rgba(0,0,0,.35)}
+  .gate .pill{display:inline-block;background:var(--red);color:#fff;font:700 10px/1 inherit;
+    letter-spacing:.13em;text-transform:uppercase;padding:6px 10px;border-radius:5px}
+  .gate h3{color:var(--ink);font-size:20px;text-transform:none;letter-spacing:-.3px;
+    margin:13px 0 9px}
+  .gate p{font-size:14px;color:var(--mut);margin:0 0 11px}
+  .gate ul{margin:0 0 18px;padding-left:19px;font-size:13.5px;color:var(--mut)}
+  .gate li{margin-bottom:5px}
+  .gate button{width:100%;background:var(--red);color:#fff;border:0;border-radius:11px;
+    padding:15px;font:700 16px/1 inherit;cursor:pointer}
 </style>
 </head>
 <body>
+
+<div class="gate" id="gate">
+  <div class="box">
+    <span class="pill">Demo · Not Live</span>
+    <h3>This is a working preview.</h3>
+    <p>Click through it exactly like a customer would — every screen, photo tile and
+      validation is real.</p>
+    <ul>
+      <li><b>Nothing is submitted or stored.</b> There is no backend behind this page.</li>
+      <li>Photos you attach stay on this device and never leave it.</li>
+      <li>Please don't enter real personal information.</li>
+    </ul>
+    <button type="button" id="gateGo">Start the walkthrough</button>
+  </div>
+</div>
+
+<div class="stamp">Demo</div>
+
 <div class="wrap">
   <div class="demo">Demo build · nothing is submitted or stored</div>
   <header>
@@ -341,15 +381,13 @@
       to our lenders — one pull, shopped to every bank we work with.</p>
 
     <h3>Personal</h3>
-    <div class="row">
-      <label class="f"><span>Date of birth <i class="req">*</i></span>
-        <input type="date" name="dob" required></label>
-      <label class="f"><span>Social Security number <i class="req">*</i></span>
-        <input type="tel" name="ssn" inputmode="numeric" placeholder="000-00-0000"
-               maxlength="11" autocomplete="off" required></label>
+    <label class="f"><span>Date of birth <i class="req">*</i></span>
+      <input type="date" name="dob" required></label>
+    <div class="info">
+      <b>Social Security number</b>
+      The live version collects your SSN here over an encrypted connection, visible only to
+      our finance manager. It is left out of this preview on purpose.
     </div>
-    <p class="hint">Required by federal law for a credit application. Encrypted in transit and
-      visible only to our finance manager.</p>
 
     <h3>Housing</h3>
     <div class="row">
@@ -646,12 +684,6 @@
       !(under || (m && +m[1] < 2));
   });
 
-  form.elements.ssn.addEventListener("input", function (e) {
-    var d = e.target.value.replace(/\D/g, "").slice(0, 9);
-    e.target.value = d.length > 5 ? d.slice(0,3)+"-"+d.slice(3,5)+"-"+d.slice(5)
-                   : d.length > 3 ? d.slice(0,3)+"-"+d.slice(3)
-                   : d;
-  });
   form.elements.phone.addEventListener("input", function (e) {
     var d = e.target.value.replace(/\D/g, "").slice(0, 10);
     e.target.value = d.length > 6 ? "("+d.slice(0,3)+") "+d.slice(3,6)+"-"+d.slice(6)
@@ -718,7 +750,6 @@
 
     card("Credit application", "credit", [
       ["Date of birth", val("dob")],
-      ["SSN", val("ssn") ? "•••-••-" + val("ssn").slice(-4) : ""],
       ["Housing", val("housing")],
       ["Monthly payment", money(val("housePmt"))],
       ["Employer", val("employer")],
@@ -758,9 +789,9 @@
   }
 
   /* ── resume ─────────────────────────────────────────────────── */
-  // Text fields only. File handles can't be serialized, and we wouldn't want
-  // an SSN sitting in localStorage on a shared phone either — so it's excluded.
-  var SKIP = { ssn: 1, creditOK: 1, smsOK: 1 };
+  // Text fields only — file handles can't be serialized. Consent boxes are never
+  // restored: a customer has to tick those themselves, every time.
+  var SKIP = { creditOK: 1, smsOK: 1 };
   function save() {
     var d = {};
     [].forEach.call(form.elements, function (el) {
@@ -793,6 +824,11 @@
     '<input type="radio" name="hasTrade" id="tr_n" value="no" checked><label for="tr_n">No</label>' +
     "</div>";
   document.querySelector('[data-k="start"]').appendChild(q);
+
+  var gate = document.getElementById("gate");
+  document.getElementById("gateGo").addEventListener("click", function () {
+    gate.hidden = true;
+  });
 
   restore();
   show(0);
