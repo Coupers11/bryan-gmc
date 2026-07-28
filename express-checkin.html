@@ -1,0 +1,802 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- Demo build on a public URL that looks like a real credit application. Keep it out
+     of search until it's approved and wired to a real, secured backend. -->
+<meta name="robots" content="noindex, nofollow">
+<title>Express Check-In · Ed Martin Buick GMC</title>
+<!--
+  DEMO BUILD — nothing is transmitted anywhere.
+
+  Every file the customer picks stays in browser memory (URL.createObjectURL) and text
+  fields are cached in localStorage so a half-finished app survives a phone lock. There
+  is no backend, no upload endpoint, no network call in this file at all.
+
+  Before this is ever pointed at a real customer it needs, at minimum: TLS-only hosting,
+  encrypted-at-rest storage, an access-controlled destination, and a retention policy.
+  SSN + driver's-license images put this under the GLBA Safeguards Rule and several state
+  DL-data statutes — that is a real compliance project, not a deploy.
+
+  The SMS consent box ships UNCHECKED on purpose. Pre-checking it is a TCPA violation.
+-->
+<style>
+  :root{
+    --red:#c8102e; --ink:#16181d; --mut:#6b6862; --line:#e7e4de;
+    --bg:#f4f3f0; --panel:#fff; --ok:#1a8a4a;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+  .wrap{max-width:540px;margin:0 auto;background:var(--panel);min-height:100vh;
+    box-shadow:0 0 40px rgba(0,0,0,.07)}
+
+  /* ── header + progress ─────────────────────────────────────────── */
+  header{background:var(--ink);color:#fff;padding:16px 20px 14px}
+  .brand{font-size:11px;letter-spacing:.14em;text-transform:uppercase;opacity:.62}
+  header h1{margin:3px 0 0;font-size:19px;font-weight:700;letter-spacing:-.2px}
+  .bar{height:4px;background:#2c2f36}
+  .bar i{display:block;height:100%;background:var(--red);width:0;transition:width .35s ease}
+  .crumb{padding:9px 20px;font-size:11.5px;color:var(--mut);letter-spacing:.05em;
+    text-transform:uppercase;border-bottom:1px solid var(--line);background:#faf9f7}
+
+  /* ── steps ─────────────────────────────────────────────────────── */
+  main{padding:22px 20px 120px}
+  .step{display:none} .step.on{display:block;animation:in .28s ease}
+  @keyframes in{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:none}}
+  h2{font-size:23px;line-height:1.2;margin:0 0 7px;letter-spacing:-.4px}
+  .lede{color:var(--mut);font-size:14.5px;margin:0 0 20px}
+  h3{font-size:12px;text-transform:uppercase;letter-spacing:.07em;color:var(--red);
+    margin:24px 0 9px}
+
+  /* ── fields ────────────────────────────────────────────────────── */
+  label.f{display:block;margin-bottom:14px}
+  label.f>span{display:block;font-size:13px;font-weight:600;margin-bottom:5px}
+  .req{color:var(--red)}
+  input[type=text],input[type=tel],input[type=email],input[type=date],
+  input[type=number],select,textarea{
+    width:100%;font:16px/1.4 inherit;color:var(--ink);background:#fff;
+    border:1.5px solid var(--line);border-radius:10px;padding:12px 13px;appearance:none}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--red)}
+  input.bad,select.bad{border-color:var(--red);background:#fdf4f5}
+  .row{display:flex;gap:11px}.row>*{flex:1}
+  .hint{font-size:12px;color:var(--mut);margin:-9px 0 14px}
+
+  /* ── yes/no pills ──────────────────────────────────────────────── */
+  .pills{display:flex;gap:9px;margin-bottom:16px}
+  .pills input{position:absolute;opacity:0;pointer-events:none}
+  .pills label{flex:1;text-align:center;padding:13px 8px;border:1.5px solid var(--line);
+    border-radius:10px;font-weight:600;font-size:14.5px;cursor:pointer;background:#fff}
+  .pills input:checked+label{border-color:var(--red);background:#fdf3f4;color:var(--red)}
+
+  /* ── upload tiles ──────────────────────────────────────────────── */
+  .up{display:flex;align-items:center;gap:13px;width:100%;padding:15px;margin-bottom:11px;
+    border:1.75px dashed #cfccc5;border-radius:13px;background:#faf9f7;cursor:pointer;
+    position:relative;transition:.18s}
+  .up:active{transform:scale(.985)}
+  .up.done{border-style:solid;border-color:var(--ok);background:#f2faf5}
+  .up.bad{border-color:var(--red);background:#fdf4f5}
+  .up input{position:absolute;inset:0;opacity:0;cursor:pointer}
+  .up .ic{width:44px;height:44px;flex:none;border-radius:10px;background:#eceae5;
+    display:grid;place-items:center;font-size:21px;overflow:hidden}
+  .up.done .ic{background:var(--ok);color:#fff}
+  .up .ic img{width:100%;height:100%;object-fit:cover}
+  .up b{display:block;font-size:14.5px}
+  .up small{display:block;color:var(--mut);font-size:12.5px;margin-top:1px}
+  .up .chk{margin-left:auto;font-size:19px;color:var(--ok);opacity:0}
+  .up.done .chk{opacity:1}
+  .opt{font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;
+    color:var(--mut);border:1px solid var(--line);border-radius:4px;padding:1px 5px;
+    margin-left:6px;vertical-align:1px}
+
+  /* ── notes / callouts ──────────────────────────────────────────── */
+  .note{background:#fdf3f4;border-left:3px solid var(--red);border-radius:0 8px 8px 0;
+    padding:13px 15px;margin:16px 0;font-size:13.5px}
+  .note b{display:block;margin-bottom:3px}
+  .info{background:#f4f3f0;border-left:3px solid #c9c6bf;border-radius:0 8px 8px 0;
+    padding:12px 15px;margin:15px 0;font-size:13px;color:#4a4842}
+  ul.tight{margin:7px 0 0;padding-left:19px} ul.tight li{margin-bottom:4px;font-size:13.5px}
+
+  /* ── consent ───────────────────────────────────────────────────── */
+  .cons{display:flex;gap:11px;align-items:flex-start;padding:14px;border:1.5px solid var(--line);
+    border-radius:11px;margin-bottom:12px;background:#fff;cursor:pointer}
+  .cons input{width:21px;height:21px;flex:none;margin:1px 0 0;accent-color:var(--red)}
+  .cons span{font-size:12.5px;line-height:1.5;color:#3e3c37}
+  .cons.bad{border-color:var(--red);background:#fdf4f5}
+
+  /* ── review ────────────────────────────────────────────────────── */
+  .rev{border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:16px}
+  .rev h4{margin:0;padding:11px 15px;background:#faf9f7;font-size:12px;text-transform:uppercase;
+    letter-spacing:.06em;color:var(--mut);border-bottom:1px solid var(--line)}
+  .rev dl{margin:0;padding:5px 15px 11px}
+  .rev div{display:flex;gap:12px;padding:6px 0;border-bottom:1px solid #f2f1ed;font-size:13.5px}
+  .rev div:last-child{border:0}
+  .rev dt{color:var(--mut);flex:none;width:44%}
+  .rev dd{margin:0;font-weight:600;flex:1;word-break:break-word}
+  .edit{background:none;border:0;color:var(--red);font:600 12px/1 inherit;
+    text-decoration:underline;cursor:pointer;padding:0;float:right;margin-top:1px}
+
+  /* ── nav ───────────────────────────────────────────────────────── */
+  nav{position:fixed;bottom:0;left:0;right:0;background:rgba(255,255,255,.97);
+    backdrop-filter:blur(8px);border-top:1px solid var(--line);padding:13px 20px;
+    padding-bottom:calc(13px + env(safe-area-inset-bottom));display:flex;gap:11px}
+  nav .in{max-width:540px;margin:0 auto;display:flex;gap:11px;width:100%}
+  button.go{flex:1;background:var(--red);color:#fff;border:0;border-radius:11px;
+    padding:15px;font:700 16px/1 inherit;cursor:pointer}
+  button.go:active{background:#a80d26}
+  button.go[disabled]{background:#cfccc5;cursor:not-allowed}
+  button.back{background:#fff;color:var(--mut);border:1.5px solid var(--line);border-radius:11px;
+    padding:15px 19px;font:600 15px/1 inherit;cursor:pointer}
+  .err{color:var(--red);font-size:13px;font-weight:600;margin:0 0 12px;display:none}
+  .err.on{display:block}
+
+  /* ── done ──────────────────────────────────────────────────────── */
+  .seal{width:66px;height:66px;border-radius:50%;background:var(--ok);color:#fff;
+    display:grid;place-items:center;font-size:33px;margin:8px 0 18px}
+  .demo{background:#16181d;color:#fff;text-align:center;font-size:11px;padding:6px;
+    letter-spacing:.06em;text-transform:uppercase}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="demo">Demo build · nothing is submitted or stored</div>
+  <header>
+    <div class="brand">Ed Martin Buick GMC · Carmel</div>
+    <h1>Express Check-In</h1>
+  </header>
+  <div class="bar"><i id="bar"></i></div>
+  <div class="crumb" id="crumb">Step 1 of 8</div>
+
+  <main>
+  <form id="form" novalidate>
+
+  <!-- 0 ── welcome ─────────────────────────────────────────────── -->
+  <section class="step on" data-k="start">
+    <h2>Let's get you out the door in twenty minutes.</h2>
+    <p class="lede">Do the paperwork here, from your phone, before you drive over.
+      When you show up we hand you keys — not a clipboard.</p>
+    <div class="info">
+      <b>You'll need about 6 minutes and your phone camera.</b>
+      <ul class="tight">
+        <li>Driver's license (front and back)</li>
+        <li>Insurance card</li>
+        <li>Title or registration, if you're trading something in</li>
+        <li>Your employment and income details for the credit application</li>
+      </ul>
+    </div>
+    <p class="lede" style="margin-bottom:0">Stop anytime — your progress is saved on this
+      phone and you can pick up where you left off.</p>
+  </section>
+
+  <!-- 1 ── who ────────────────────────────────────────────────── -->
+  <section class="step" data-k="you">
+    <h2>Who are we writing this up for?</h2>
+    <p class="lede">Exactly as it appears on your driver's license.</p>
+    <div class="row">
+      <label class="f"><span>First name <i class="req">*</i></span>
+        <input type="text" name="first" autocomplete="given-name" required></label>
+      <label class="f"><span>Last name <i class="req">*</i></span>
+        <input type="text" name="last" autocomplete="family-name" required></label>
+    </div>
+    <label class="f"><span>Mobile number <i class="req">*</i></span>
+      <input type="tel" name="phone" autocomplete="tel" placeholder="(317) 555-0142" required></label>
+    <label class="f"><span>Email <i class="req">*</i></span>
+      <input type="email" name="email" autocomplete="email" required></label>
+    <h3>Current home address</h3>
+    <label class="f"><span>Street address <i class="req">*</i></span>
+      <input type="text" name="addr" autocomplete="street-address" required></label>
+    <div class="row">
+      <label class="f"><span>City <i class="req">*</i></span>
+        <input type="text" name="city" autocomplete="address-level2" required></label>
+      <label class="f" style="max-width:88px"><span>State <i class="req">*</i></span>
+        <input type="text" name="state" value="IN" maxlength="2" required></label>
+      <label class="f" style="max-width:110px"><span>ZIP <i class="req">*</i></span>
+        <input type="tel" name="zip" inputmode="numeric" maxlength="5" required></label>
+    </div>
+  </section>
+
+  <!-- 2 ── license ────────────────────────────────────────────── -->
+  <section class="step" data-k="dl">
+    <h2>Driver's license</h2>
+    <p class="lede">Lay it flat, good light, all four corners in frame. This is what the
+      state requires us to have on file before you can drive off.</p>
+
+    <label class="up" data-doc="dl_front">
+      <input type="file" accept="image/*" capture="environment" data-req="1">
+      <span class="ic">📷</span>
+      <span><b>Front of license</b><small>Tap to take a photo</small></span>
+      <span class="chk">✓</span>
+    </label>
+    <label class="up" data-doc="dl_back">
+      <input type="file" accept="image/*" capture="environment" data-req="1">
+      <span class="ic">📷</span>
+      <span><b>Back of license</b><small>Tap to take a photo</small></span>
+      <span class="chk">✓</span>
+    </label>
+
+    <h3>Address check</h3>
+    <p style="font-size:14px;margin:0 0 11px">Does the address printed on your license match
+      the address you just gave us — <b id="addrEcho">the one above</b>?</p>
+    <div class="pills">
+      <input type="radio" name="addrMatch" id="am_y" value="yes" required><label for="am_y">Yes, it matches</label>
+      <input type="radio" name="addrMatch" id="am_n" value="no"><label for="am_n">No, I've moved</label>
+    </div>
+    <div class="note" id="movedNote" hidden>
+      <b>No problem — we'll just need two proofs of residence.</b>
+      Because you've moved, the lender needs two documents showing your name at the new
+      address. We'll collect those on the next screen.
+    </div>
+  </section>
+
+  <!-- 3 ── proof of residence (conditional) ───────────────────── -->
+  <section class="step" data-k="proof">
+    <h2>Two proofs of residence</h2>
+    <p class="lede">Your license still shows the old address, so we need two documents that
+      show <b>your name</b> and <b>your new address</b>, dated in the <b>last 30 days</b>.</p>
+
+    <div class="info">
+      <b>Any two of these work:</b>
+      <ul class="tight">
+        <li>Bank or credit-union statement</li>
+        <li>Cell phone bill</li>
+        <li>Utility bill — electric, gas, water, internet</li>
+        <li>Current lease or mortgage statement</li>
+        <li>Insurance statement or vehicle registration</li>
+      </ul>
+    </div>
+    <p class="hint" style="margin-top:0">A screenshot of the online version counts, as long as
+      your name, the address and the date are all visible. Two documents from the
+      <i>same</i> company usually won't be accepted — mix them up.</p>
+
+    <label class="up" data-doc="por_1">
+      <input type="file" accept="image/*,application/pdf" data-req="1">
+      <span class="ic">📄</span>
+      <span><b>Proof of residence #1</b><small>Photo, screenshot or PDF</small></span>
+      <span class="chk">✓</span>
+    </label>
+    <label class="up" data-doc="por_2">
+      <input type="file" accept="image/*,application/pdf" data-req="1">
+      <span class="ic">📄</span>
+      <span><b>Proof of residence #2</b><small>Different company than #1</small></span>
+      <span class="chk">✓</span>
+    </label>
+  </section>
+
+  <!-- 4 ── insurance ──────────────────────────────────────────── -->
+  <section class="step" data-k="ins">
+    <h2>Insurance</h2>
+    <p class="lede">Indiana law says the car can't leave the lot without coverage. Send us the
+      card now and we'll have your agent squared away before you arrive.</p>
+
+    <label class="up" data-doc="ins_card">
+      <input type="file" accept="image/*" capture="environment" data-req="1">
+      <span class="ic">📷</span>
+      <span><b>Insurance card</b><small>Front side — the one with the policy number</small></span>
+      <span class="chk">✓</span>
+    </label>
+
+    <div class="row">
+      <label class="f"><span>Insurance company <i class="req">*</i></span>
+        <input type="text" name="insCo" placeholder="State Farm" required></label>
+      <label class="f"><span>Policy number</span>
+        <input type="text" name="insPolicy"></label>
+    </div>
+    <label class="f"><span>Agent name and phone <span class="opt">Optional</span></span>
+      <input type="text" name="insAgent" placeholder="So we can add the car for you"></label>
+  </section>
+
+  <!-- 5 ── trade-in (conditional) ─────────────────────────────── -->
+  <section class="step" data-k="trade">
+    <h2>Your trade-in</h2>
+    <p class="lede">Getting the title and payoff up front is what keeps delivery day short.</p>
+
+    <div class="row">
+      <label class="f"><span>Year <i class="req">*</i></span>
+        <input type="tel" name="trYear" inputmode="numeric" maxlength="4" required></label>
+      <label class="f"><span>Make <i class="req">*</i></span>
+        <input type="text" name="trMake" placeholder="GMC" required></label>
+      <label class="f"><span>Model <i class="req">*</i></span>
+        <input type="text" name="trModel" placeholder="Sierra" required></label>
+    </div>
+    <div class="row">
+      <label class="f"><span>Mileage <i class="req">*</i></span>
+        <input type="tel" name="trMiles" inputmode="numeric" required></label>
+      <label class="f"><span>Still owe on it?</span>
+        <select name="trLoan">
+          <option value="">Choose…</option>
+          <option>Paid off — I have the title</option>
+          <option>Still financed</option>
+          <option>Leased</option>
+        </select></label>
+    </div>
+    <label class="f"><span>Lender or leasing company <span class="opt">If financed</span></span>
+      <input type="text" name="trLender"></label>
+
+    <h3>Documents</h3>
+    <label class="up" data-doc="tr_title">
+      <input type="file" accept="image/*,application/pdf" data-req="1">
+      <span class="ic">📷</span>
+      <span><b>Title or current registration</b><small>Whichever you have on hand</small></span>
+      <span class="chk">✓</span>
+    </label>
+    <label class="up" data-doc="tr_payoff">
+      <input type="file" accept="image/*,application/pdf">
+      <span class="ic">📄</span>
+      <span><b>Payoff quote<span class="opt">Optional</span></b><small>Speeds things up if it's financed</small></span>
+      <span class="chk">✓</span>
+    </label>
+    <label class="up" data-doc="tr_photos">
+      <input type="file" accept="image/*" capture="environment" multiple>
+      <span class="ic">📷</span>
+      <span><b>Photos of the vehicle<span class="opt">Optional</span></b><small>Four corners and the odometer</small></span>
+      <span class="chk">✓</span>
+    </label>
+  </section>
+
+  <!-- 6 ── credit application ─────────────────────────────────── -->
+  <section class="step" data-k="credit">
+    <h2>Credit application</h2>
+    <p class="lede">This is the same application you'd fill out at the desk. It goes straight
+      to our lenders — one pull, shopped to every bank we work with.</p>
+
+    <h3>Personal</h3>
+    <div class="row">
+      <label class="f"><span>Date of birth <i class="req">*</i></span>
+        <input type="date" name="dob" required></label>
+      <label class="f"><span>Social Security number <i class="req">*</i></span>
+        <input type="tel" name="ssn" inputmode="numeric" placeholder="000-00-0000"
+               maxlength="11" autocomplete="off" required></label>
+    </div>
+    <p class="hint">Required by federal law for a credit application. Encrypted in transit and
+      visible only to our finance manager.</p>
+
+    <h3>Housing</h3>
+    <div class="row">
+      <label class="f"><span>Do you rent or own? <i class="req">*</i></span>
+        <select name="housing" required>
+          <option value="">Choose…</option>
+          <option>Own — with a mortgage</option>
+          <option>Own — free and clear</option>
+          <option>Rent</option>
+          <option>Live with family</option>
+        </select></label>
+      <label class="f"><span>Monthly payment <i class="req">*</i></span>
+        <input type="tel" name="housePmt" inputmode="numeric" placeholder="$" required></label>
+    </div>
+    <label class="f"><span>How long at this address? <i class="req">*</i></span>
+      <input type="text" name="addrYears" placeholder="3 years 2 months" required></label>
+    <div class="note" id="prevAddrNote" hidden>
+      <b>Under two years?</b> Bring or add your previous address — lenders ask for a
+      two-year history. Your salesperson will grab it when you come in.
+    </div>
+
+    <h3>Employment</h3>
+    <div class="row">
+      <label class="f"><span>Employer <i class="req">*</i></span>
+        <input type="text" name="employer" required></label>
+      <label class="f"><span>Job title <i class="req">*</i></span>
+        <input type="text" name="jobTitle" required></label>
+    </div>
+    <div class="row">
+      <label class="f"><span>Time there <i class="req">*</i></span>
+        <input type="text" name="jobYears" placeholder="5 years" required></label>
+      <label class="f"><span>Work phone</span>
+        <input type="tel" name="workPhone"></label>
+    </div>
+    <div class="row">
+      <label class="f"><span>Gross monthly income <i class="req">*</i></span>
+        <input type="tel" name="income" inputmode="numeric" placeholder="$" required></label>
+      <label class="f"><span>Pay frequency <i class="req">*</i></span>
+        <select name="payFreq" required>
+          <option value="">Choose…</option>
+          <option>Weekly</option><option>Every two weeks</option>
+          <option>Twice a month</option><option>Monthly</option>
+          <option>Self-employed / 1099</option>
+        </select></label>
+    </div>
+    <label class="f"><span>Other income <span class="opt">Optional</span></span>
+      <input type="text" name="otherIncome" placeholder="Amount and source"></label>
+    <p class="hint">You don't have to list alimony, child support or separate maintenance
+      income unless you want it considered.</p>
+
+    <h3>Co-applicant</h3>
+    <div class="pills">
+      <input type="radio" name="hasCo" id="co_n" value="no" checked><label for="co_n">Just me</label>
+      <input type="radio" name="hasCo" id="co_y" value="yes"><label for="co_y">Adding a co-applicant</label>
+    </div>
+    <div id="coBlock" hidden>
+      <div class="row">
+        <label class="f"><span>Co-applicant name</span>
+          <input type="text" name="coName"></label>
+        <label class="f"><span>Relationship</span>
+          <input type="text" name="coRel" placeholder="Spouse"></label>
+      </div>
+      <p class="hint">We'll text them their own secure link for their license, SSN and income —
+        they never have to hand you their private details.</p>
+    </div>
+  </section>
+
+  <!-- 7 ── consent ────────────────────────────────────────────── -->
+  <section class="step" data-k="consent">
+    <h2>Authorization</h2>
+    <p class="lede">Two boxes. The first one we need, the second one is entirely up to you.</p>
+
+    <label class="cons" id="c1w">
+      <input type="checkbox" name="creditOK" id="creditOK">
+      <span><b>Credit authorization.</b> I certify the information above is true and complete,
+        and I authorize Ed Martin Buick GMC and the lenders it works with to obtain my credit
+        report and verify my employment and income in connection with this application. I
+        understand this may result in an inquiry on my credit file.</span>
+    </label>
+
+    <label class="cons">
+      <input type="checkbox" name="smsOK" id="smsOK">
+      <span><b>Text me updates.</b> Send me texts about this application and my appointment.
+        Message and data rates may apply, message frequency varies, and I can reply STOP at any
+        time to opt out. Consent isn't a condition of purchase.</span>
+    </label>
+
+    <div class="info">
+      Your documents are transmitted over an encrypted connection and are visible only to the
+      salesperson and finance manager working your deal. We do not sell your information.
+    </div>
+  </section>
+
+  <!-- 8 ── review ─────────────────────────────────────────────── -->
+  <section class="step" data-k="review">
+    <h2>One last look</h2>
+    <p class="lede">Tap any section to fix something before it goes over.</p>
+    <div id="summary"></div>
+  </section>
+
+  <!-- 9 ── done ───────────────────────────────────────────────── -->
+  <section class="step" data-k="done">
+    <div class="seal">✓</div>
+    <h2>You're checked in.</h2>
+    <p class="lede" id="doneLede">Everything's with Bryan. He'll text you as soon as the
+      lender comes back — usually within the hour during business hours.</p>
+
+    <div class="note">
+      <b>Still bring the originals with you.</b>
+      Photos get the paperwork started, but the state and the lender need to see the real
+      thing at delivery:
+      <ul class="tight">
+        <li>Your actual driver's license</li>
+        <li>Your insurance card</li>
+        <li>The trade's title, signed by everyone listed on it</li>
+        <li>A voided check or your bank details, if you're setting up autopay</li>
+        <li>Your method of down payment</li>
+      </ul>
+    </div>
+
+    <div class="info">
+      <b>What happens next</b>
+      <ul class="tight">
+        <li>Bryan reviews your application and sends it to the lenders.</li>
+        <li>You get a text with your approval and your real numbers.</li>
+        <li>You pick a pickup time. Paperwork is printed and waiting.</li>
+        <li>You sign, you get keys. Twenty minutes.</li>
+      </ul>
+    </div>
+    <p style="font-size:14px;color:var(--mut)">Questions before then? Text Bryan directly at
+      <a href="tel:4632140522" style="color:var(--red);font-weight:600">463-214-0522</a>.</p>
+  </section>
+
+  </form>
+  </main>
+
+  <nav>
+    <div class="in">
+      <button type="button" class="back" id="back" hidden>Back</button>
+      <button type="button" class="go" id="next">Get started</button>
+    </div>
+  </nav>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var form   = document.getElementById("form"),
+      steps  = [].slice.call(document.querySelectorAll(".step")),
+      keys   = steps.map(function (s) { return s.dataset.k; }),
+      nextBt = document.getElementById("next"),
+      backBt = document.getElementById("back"),
+      bar    = document.getElementById("bar"),
+      crumb  = document.getElementById("crumb"),
+      files  = {},                 // docKey -> [File]
+      i      = 0;
+
+  var LABELS = {
+    start:"Welcome", you:"Your information", dl:"Driver's license",
+    proof:"Proof of residence", ins:"Insurance", trade:"Trade-in",
+    credit:"Credit application", consent:"Authorization", review:"Review", done:"Done"
+  };
+
+  /* Conditional steps. A step whose test returns false is skipped in both
+     directions, so the customer never sees a screen that doesn't apply. */
+  var SHOW = {
+    proof: function () { return val("addrMatch") === "no"; },
+    trade: function () { return val("hasTrade") === "yes"; }
+  };
+
+  function val(n) {
+    var el = form.elements[n];
+    if (!el) return "";
+    if (el.length && el[0].type === "radio") {
+      var c = [].slice.call(el).filter(function (r) { return r.checked; })[0];
+      return c ? c.value : "";
+    }
+    return (el.value || "").trim();
+  }
+  function visible(k) { return !SHOW[k] || SHOW[k](); }
+
+  /* ── navigation ─────────────────────────────────────────────── */
+  function show(n) {
+    steps[i].classList.remove("on");
+    i = n;
+    steps[i].classList.add("on");
+
+    // "done" is a confirmation, not a step the customer has to work through.
+    var live = keys.filter(function (k) { return k !== "done" && visible(k); }),
+        pos  = live.indexOf(keys[i]) + 1;
+    bar.style.width = keys[i] === "done" ? "100%" : (pos / live.length * 100) + "%";
+    crumb.textContent = keys[i] === "done"
+      ? "Complete"
+      : "Step " + pos + " of " + live.length + " · " + LABELS[keys[i]];
+
+    backBt.hidden  = i === 0 || keys[i] === "done";
+    nextBt.hidden  = keys[i] === "done";
+    nextBt.textContent =
+      keys[i] === "start"  ? "Get started" :
+      keys[i] === "review" ? "Submit application" : "Continue";
+
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    if (keys[i] === "review") buildSummary();
+    save();
+  }
+  function step(dir) {
+    var n = i + dir;
+    while (n > 0 && n < steps.length && !visible(keys[n])) n += dir;
+    return Math.max(0, Math.min(steps.length - 1, n));
+  }
+
+  nextBt.addEventListener("click", function () {
+    if (!check(steps[i])) return;
+    if (keys[i] === "review") return submit();
+    show(step(1));
+  });
+  backBt.addEventListener("click", function () { show(step(-1)); });
+
+  /* ── validation ─────────────────────────────────────────────── */
+  function check(sec) {
+    var bad = null;
+
+    sec.querySelectorAll("[required]").forEach(function (el) {
+      var ok = el.type === "radio"
+        ? !!form.querySelector('[name="' + el.name + '"]:checked')
+        : !!el.value.trim();
+      var t = el.type === "radio" ? el.closest(".pills") : el;
+      t.classList.toggle("bad", !ok);
+      if (!ok && !bad) bad = t;
+    });
+
+    sec.querySelectorAll(".up").forEach(function (up) {
+      if (!up.querySelector("input").dataset.req) return;
+      var ok = !!files[up.dataset.doc];
+      up.classList.toggle("bad", !ok);
+      if (!ok && !bad) bad = up;
+    });
+
+    if (keys[i] === "consent") {
+      var c = document.getElementById("creditOK");
+      document.getElementById("c1w").classList.toggle("bad", !c.checked);
+      if (!c.checked && !bad) bad = document.getElementById("c1w");
+    }
+
+    if (bad) {
+      bad.scrollIntoView({ behavior: "smooth", block: "center" });
+      if (navigator.vibrate) navigator.vibrate(40);
+    }
+    return !bad;
+  }
+
+  /* ── uploads ────────────────────────────────────────────────── */
+  document.querySelectorAll(".up input").forEach(function (inp) {
+    inp.addEventListener("change", function () {
+      var up = inp.closest(".up"), k = up.dataset.doc;
+      if (!inp.files.length) return;
+      files[k] = [].slice.call(inp.files);
+      up.classList.add("done");
+      up.classList.remove("bad");
+
+      var f = files[k][0], ic = up.querySelector(".ic");
+      if (f.type.indexOf("image/") === 0) {
+        // Thumbnail straight off the file handle. Nothing leaves the device.
+        var img = new Image();
+        img.src = URL.createObjectURL(f);
+        img.onload = function () { ic.innerHTML = ""; ic.appendChild(img); };
+      } else {
+        ic.textContent = "✓";
+      }
+      var n = files[k].length;
+      up.querySelector("small").textContent =
+        n > 1 ? n + " files attached · tap to change"
+              : f.name.slice(0, 30) + " · tap to retake";
+    });
+  });
+
+  /* ── conditional reveals ────────────────────────────────────── */
+  form.addEventListener("change", function (e) {
+    if (e.target.name === "addrMatch") {
+      document.getElementById("movedNote").hidden = e.target.value !== "no";
+    }
+    if (e.target.name === "hasCo") {
+      document.getElementById("coBlock").hidden = e.target.value !== "yes";
+    }
+    save();
+  });
+
+  form.elements.addrYears.addEventListener("input", function (e) {
+    // Lenders want a two-year address history; warn as soon as we can tell.
+    var m = /(\d+)\s*(y|year)/i.exec(e.target.value);
+    var under = /month/i.test(e.target.value) && !m;
+    document.getElementById("prevAddrNote").hidden =
+      !(under || (m && +m[1] < 2));
+  });
+
+  form.elements.ssn.addEventListener("input", function (e) {
+    var d = e.target.value.replace(/\D/g, "").slice(0, 9);
+    e.target.value = d.length > 5 ? d.slice(0,3)+"-"+d.slice(3,5)+"-"+d.slice(5)
+                   : d.length > 3 ? d.slice(0,3)+"-"+d.slice(3)
+                   : d;
+  });
+  form.elements.phone.addEventListener("input", function (e) {
+    var d = e.target.value.replace(/\D/g, "").slice(0, 10);
+    e.target.value = d.length > 6 ? "("+d.slice(0,3)+") "+d.slice(3,6)+"-"+d.slice(6)
+                   : d.length > 3 ? "("+d.slice(0,3)+") "+d.slice(3)
+                   : d;
+  });
+
+  // Echo the address they typed back at them on the license screen, so the
+  // "does this match?" question is concrete instead of abstract.
+  form.addEventListener("input", function () {
+    var a = val("addr"), c = val("city");
+    document.getElementById("addrEcho").textContent =
+      a ? a + (c ? ", " + c : "") : "the one above";
+  });
+
+  /* ── review ─────────────────────────────────────────────────── */
+  function buildSummary() {
+    var out = "";
+
+    function card(title, key, rows) {
+      var body = rows.filter(function (r) { return r[1]; }).map(function (r) {
+        return "<div><dt>" + r[0] + "</dt><dd>" + esc(r[1]) + "</dd></div>";
+      }).join("");
+      if (!body) return;
+      out += '<div class="rev"><h4>' + title +
+             '<button type="button" class="edit" data-go="' + key + '">Edit</button></h4>' +
+             "<dl>" + body + "</dl></div>";
+    }
+    function docs(list) {
+      return list.filter(function (k) { return files[k]; })
+                 .map(function (k) { return files[k].length; })
+                 .reduce(function (a, b) { return a + b; }, 0);
+    }
+
+    card("Your information", "you", [
+      ["Name", val("first") + " " + val("last")],
+      ["Mobile", val("phone")],
+      ["Email", val("email")],
+      ["Address", [val("addr"), val("city"), val("state"), val("zip")]
+                    .filter(Boolean).join(", ")]
+    ]);
+
+    card("Driver's license", "dl", [
+      ["Photos", docs(["dl_front","dl_back"]) + " of 2 uploaded"],
+      ["Address matches", val("addrMatch") === "yes" ? "Yes" : "No — moved"]
+    ]);
+
+    if (visible("proof")) card("Proof of residence", "proof", [
+      ["Documents", docs(["por_1","por_2"]) + " of 2 uploaded"]
+    ]);
+
+    card("Insurance", "ins", [
+      ["Company", val("insCo")],
+      ["Policy", val("insPolicy")],
+      ["Card", files.ins_card ? "Uploaded" : "—"]
+    ]);
+
+    if (visible("trade")) card("Trade-in", "trade", [
+      ["Vehicle", [val("trYear"), val("trMake"), val("trModel")].filter(Boolean).join(" ")],
+      ["Mileage", val("trMiles")],
+      ["Status", val("trLoan")],
+      ["Documents", docs(["tr_title","tr_payoff","tr_photos"]) + " uploaded"]
+    ]);
+
+    card("Credit application", "credit", [
+      ["Date of birth", val("dob")],
+      ["SSN", val("ssn") ? "•••-••-" + val("ssn").slice(-4) : ""],
+      ["Housing", val("housing")],
+      ["Monthly payment", money(val("housePmt"))],
+      ["Employer", val("employer")],
+      ["Position", val("jobTitle") + (val("jobYears") ? " · " + val("jobYears") : "")],
+      ["Monthly income", money(val("income"))],
+      ["Paid", val("payFreq")],
+      ["Co-applicant", val("hasCo") === "yes" ? (val("coName") || "Yes") : "No"]
+    ]);
+
+    document.getElementById("summary").innerHTML = out;
+    document.querySelectorAll(".edit").forEach(function (b) {
+      b.addEventListener("click", function () { show(keys.indexOf(b.dataset.go)); });
+    });
+  }
+  function money(v) { return v ? (/^\$/.test(v) ? v : "$" + v) : ""; }
+  function esc(s) {
+    return String(s).replace(/[&<>"]/g, function (c) {
+      return { "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" }[c];
+    });
+  }
+
+  /* ── submit ─────────────────────────────────────────────────── */
+  function submit() {
+    nextBt.disabled = true;
+    nextBt.textContent = "Sending…";
+    // DEMO: a real build POSTs here. Nothing is transmitted in this file.
+    setTimeout(function () {
+      var n = Object.keys(files).reduce(function (a, k) { return a + files[k].length; }, 0);
+      document.getElementById("doneLede").textContent =
+        "Your application and " + n + " document" + (n === 1 ? "" : "s") +
+        " are with Bryan. He'll text you as soon as the lender comes back — usually " +
+        "within the hour during business hours.";
+      try { localStorage.removeItem("emci"); } catch (e) {}
+      nextBt.disabled = false;
+      show(keys.indexOf("done"));
+    }, 1100);
+  }
+
+  /* ── resume ─────────────────────────────────────────────────── */
+  // Text fields only. File handles can't be serialized, and we wouldn't want
+  // an SSN sitting in localStorage on a shared phone either — so it's excluded.
+  var SKIP = { ssn: 1, creditOK: 1, smsOK: 1 };
+  function save() {
+    var d = {};
+    [].forEach.call(form.elements, function (el) {
+      if (!el.name || SKIP[el.name] || el.type === "file") return;
+      if (el.type === "radio") { if (el.checked) d[el.name] = el.value; }
+      else d[el.name] = el.value;
+    });
+    try { localStorage.setItem("emci", JSON.stringify(d)); } catch (e) {}
+  }
+  function restore() {
+    var d;
+    try { d = JSON.parse(localStorage.getItem("emci") || "{}"); } catch (e) { return; }
+    Object.keys(d).forEach(function (k) {
+      var el = form.elements[k];
+      if (!el) return;
+      if (el.length && el[0].type === "radio") {
+        [].forEach.call(el, function (r) { if (r.value === d[k]) r.checked = true; });
+      } else { el.value = d[k]; }
+    });
+    form.dispatchEvent(new Event("change", { bubbles: true }));
+    form.dispatchEvent(new Event("input",  { bubbles: true }));
+  }
+
+  /* ── trade-in question lives on the welcome screen ──────────── */
+  var q = document.createElement("div");
+  q.innerHTML =
+    '<h3>Are you trading a vehicle in?</h3>' +
+    '<div class="pills">' +
+    '<input type="radio" name="hasTrade" id="tr_y" value="yes"><label for="tr_y">Yes</label>' +
+    '<input type="radio" name="hasTrade" id="tr_n" value="no" checked><label for="tr_n">No</label>' +
+    "</div>";
+  document.querySelector('[data-k="start"]').appendChild(q);
+
+  restore();
+  show(0);
+})();
+</script>
+</body>
+</html>
