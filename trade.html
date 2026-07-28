@@ -264,18 +264,61 @@ function docListHTML(){
 function chkC(){const b=document.getElementById('cnext');if(b)b.disabled=!(state.name&&state.phone);}
 let _reader=null;
 function extractVin(t){const m=(t||'').toUpperCase().replace(/[^A-HJ-NPR-Z0-9]/g,'').match(/[A-HJ-NPR-Z0-9]{17}/);return m?m[0]:'';}
+let _hintTimer=null;
 async function openScanner(){
  const w=document.getElementById('scanwrap');w.classList.add('on');
+ const help=document.getElementById('scanhelp');if(help)help.classList.remove('on');
+ if(typeof ZXing==="undefined"){
+  closeScanner();
+  alert("The scanner didn't load — check your connection, or just type the VIN in. It's on the driver's door jamb sticker.");
+  return;
+ }
  try{
-  _reader=new ZXing.BrowserMultiFormatReader();
-  await _reader.decodeFromVideoDevice(null,'scanvid',(res,err)=>{
-   if(res){const vin=extractVin(res.getText());if(vin&&vin.length===17){
+  // A VIN door-jamb sticker is Code 39; registrations and window stickers use
+  // Code 128, PDF417 or Data Matrix. Naming the formats and turning on TRY_HARDER
+  // is the difference between reading a dense 17-character 1D barcode and staring
+  // at it — the default hint set gives every format an equal, shallower look.
+  const hints=new Map();
+  hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS,[
+   ZXing.BarcodeFormat.CODE_39,ZXing.BarcodeFormat.CODE_128,
+   ZXing.BarcodeFormat.PDF_417,ZXing.BarcodeFormat.DATA_MATRIX,
+   ZXing.BarcodeFormat.QR_CODE]);
+  hints.set(ZXing.DecodeHintType.TRY_HARDER,true);
+  _reader=new ZXing.BrowserMultiFormatReader(hints);
+
+  // decodeFromVideoDevice(null, …) takes whatever device is first in the list,
+  // which on a phone is the selfie camera — so the old scanner was pointing at
+  // the customer. Ask for the rear camera by name, and for as many pixels as the
+  // phone will give: a 17-character Code 39 needs the resolution to resolve bars.
+  await _reader.decodeFromConstraints(
+   {video:{facingMode:{ideal:"environment"},
+           width:{ideal:1920},height:{ideal:1080}}},
+   'scanvid',
+   (res)=>{
+    if(!res)return;                       // no-read fires constantly; it isn't an error
+    const vin=extractVin(res.getText());
+    if(vin&&vin.length===17){
      if(navigator.vibrate)navigator.vibrate(60);
-     state.vin=vin;closeScanner();scannedGo(vin);}}
-  });
- }catch(e){closeScanner();alert('Camera unavailable — please type your VIN. ('+e.message+')');}
+     state.vin=vin;closeScanner();scannedGo(vin);
+    }
+   });
+
+  // If it hasn't read anything in twelve seconds, stop letting them hunt in
+  // silence and point at the way out.
+  _hintTimer=setTimeout(()=>{const h=document.getElementById('scanhelp');if(h)h.classList.add('on');},12000);
+ }catch(e){
+  closeScanner();
+  const n=e&&e.name;
+  alert(
+   n==="NotAllowedError" ? "Camera access was blocked. Allow the camera in your browser settings, or just type the VIN in below."
+   : n==="NotFoundError"||n==="OverconstrainedError" ? "No camera found on this device — type the VIN in below instead."
+   : location.protocol!=="https:" ? "The camera only works over a secure (https) connection. Type the VIN in below instead."
+   : "Camera unavailable — please type your VIN in below. ("+(e&&e.message||n||"unknown")+")");
+ }
 }
 function closeScanner(){const w=document.getElementById('scanwrap');w.classList.remove('on');
+ clearTimeout(_hintTimer);
+ const h=document.getElementById('scanhelp');if(h)h.classList.remove('on');
  try{_reader&&_reader.reset();}catch(e){}_reader=null;}
 async function scannedGo(vin){
  render();                       // repaint VIN step showing the scanned VIN
@@ -335,6 +378,8 @@ render();
     <div class="scan-frame"><div class="scan-line"></div></div>
     <p class="scan-tip">Point at your VIN barcode</p>
     <p class="scan-sub">Driver's door jamb sticker, or the barcode on your registration</p>
+    <p class="scan-help" id="scanhelp">Not catching it? Hold steady about six inches back and make sure
+      the whole barcode is inside the box — or tap Cancel and type the VIN in, it's just as quick.</p>
     <button class="scan-x" onclick="closeScanner()">✕ Cancel</button>
   </div>
 </div>
@@ -348,6 +393,9 @@ render();
 @keyframes scanmove{0%{top:6%}50%{top:90%}100%{top:6%}}
 .scan-tip{font-family:'Oswald',sans-serif;font-size:20px;text-transform:uppercase;margin-bottom:6px}
 .scan-sub{font-size:13px;color:#cfcfcf;max-width:300px;margin-bottom:26px}
+.scan-help{display:none;font-size:13px;line-height:1.5;color:#fff;background:rgba(200,16,46,.9);
+ border-radius:10px;padding:11px 14px;max-width:320px;margin:-12px 0 22px}
+.scan-help.on{display:block}
 .scan-x{background:rgba(255,255,255,.15);border:1.5px solid rgba(255,255,255,.5);color:#fff;font-weight:700;padding:12px 26px;border-radius:10px;font-family:inherit;font-size:15px;cursor:pointer}
 .scanbtn{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;background:#111114;color:#fff;border:none;border-radius:12px;padding:15px;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;margin-bottom:14px}
 .scan-or{text-align:center;font-size:12px;color:var(--mut);letter-spacing:.08em;text-transform:uppercase;margin:2px 0 12px}
