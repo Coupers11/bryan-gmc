@@ -183,39 +183,6 @@
   .pcount{font-size:13px;color:var(--mut);margin:10px 0 0}
   .pcount b{color:var(--ink)}
 
-  /* example sheet */
-  .ex{position:fixed;inset:0;z-index:80;background:rgba(12,13,16,.8);backdrop-filter:blur(4px);
-    display:grid;place-items:end center;padding:0}
-  .ex[hidden]{display:none}
-  .ex-box{background:#fff;border-radius:18px 18px 0 0;padding:20px 20px 24px;width:100%;
-    max-width:540px;max-height:92vh;overflow:auto}
-  .ex-grip{width:38px;height:4px;border-radius:2px;background:#d8d5cf;margin:0 auto 15px}
-  .ex-box h3{color:var(--ink);text-transform:none;font-size:19px;letter-spacing:-.2px;margin:0 0 4px}
-  .ex-sub{color:var(--mut);font-size:13.5px;margin:0 0 14px}
-  /* No forced aspect ratio: the examples are shot on a phone, so they arrive
-     portrait. Cropping them to a 4:3 landscape frame would cut the teaching out
-     of the teaching photo. Cap the height instead and let each one keep its shape. */
-  .ex-img{display:block;max-width:100%;max-height:46vh;margin:0 auto 14px;
-    border-radius:12px;border:1px solid var(--line);background:#eceae5}
-  .ex-img[hidden]{display:none}
-  /* Shown when an example photo hasn't been shot yet — a framing note beats a
-     broken image icon, and the sheet still teaches the shot. */
-  .ex-ph{width:100%;aspect-ratio:4/3;border-radius:12px;background:#eceae5;
-    border:1px dashed #cfccc5;display:grid;place-items:center;text-align:center;
-    padding:18px;margin-bottom:14px}
-  .ex-ph[hidden]{display:none}
-  .ex-ph em{font-style:normal;font-size:34px;display:block;margin-bottom:9px;opacity:.5}
-  .ex-ph i{font-style:normal;font-size:13px;color:var(--mut);line-height:1.45;
-    display:block;max-width:270px}
-  .ex-tips{margin:0 0 18px;padding:0;list-style:none}
-  .ex-tips li{font-size:13.5px;padding:6px 0 6px 24px;position:relative;line-height:1.45}
-  .ex-tips li:before{content:"✓";position:absolute;left:0;color:var(--ok);font-weight:700}
-  .ex-tips li.no:before{content:"✕";color:var(--red)}
-  .ex-btn{width:100%;background:var(--red);color:#fff;border:0;border-radius:11px;padding:15px;
-    font:700 16px/1 inherit;cursor:pointer;margin-bottom:9px}
-  .ex-close{width:100%;background:#fff;color:var(--mut);border:1.5px solid var(--line);
-    border-radius:11px;padding:13px;font:600 14px/1 inherit;cursor:pointer}
-
   /* ── demo framing ──────────────────────────────────────────────── */
   /* Corner badge rides above everything and never intercepts a tap, so the
      flow still demos cleanly while nobody can mistake this for the real thing. */
@@ -694,21 +661,7 @@
   </nav>
 </div>
 
-<!-- Example sheet. One dialog, repopulated per shot — eight copies of this markup
-     would be eight things to keep in sync. -->
-<div class="ex" id="ex" hidden>
-  <div class="ex-box" role="dialog" aria-modal="true" aria-labelledby="exT">
-    <div class="ex-grip"></div>
-    <h3 id="exT"></h3>
-    <p class="ex-sub" id="exS"></p>
-    <img class="ex-img" id="exImg" alt="" hidden>
-    <div class="ex-ph" id="exPh" hidden><em id="exPhIc">📷</em><i id="exPhT"></i></div>
-    <ul class="ex-tips" id="exTips"></ul>
-    <button type="button" class="ex-btn" id="exGo">Take this photo</button>
-    <button type="button" class="ex-close" id="exX">Close</button>
-  </div>
-</div>
-
+<script src="photo-guide.js"></script>
 <script>
 (function () {
   "use strict";
@@ -856,83 +809,10 @@
   });
 
   /* ── guided trade photos ────────────────────────────────────── */
-  /* Same six shots the trade tool asks for, plus the interior. Most people hand
-     you three blurry phone pictures of the same fender; a tile per angle with a
-     worked example is the difference between a guessed number and a real one.
-     `ex` is a file in photo-examples/ — if it isn't there yet the sheet falls
-     back to the framing note, so the coaching still lands. */
-  var SHOTS = [
-    { k:"tr_front", t:"Front Corner", ic:"🚗", req:1, ex:"front.jpg",
-      h:"Angled — front and one side",
-      s:"Stand off the front-left corner so the grille and the driver's side are both in frame.",
-      tips:["Back up about ten feet and hold the phone level",
-            "Turn the wheels straight before you shoot",
-            "Bumper, both front wheels and the roofline all in frame"],
-      nos:["Not square-on from dead centre","Not so close the corners crop off"] },
-
-    { k:"tr_rear", t:"Rear Corner", ic:"🔙", req:1, ex:"rear.jpg",
-      h:"Angled — back and one side",
-      s:"Same idea from the opposite corner, so between the two shots we've seen all four sides.",
-      tips:["Off the rear-right corner, ten feet back",
-            "Tailgate, bumper and rear wheel all visible",
-            "Close the tailgate or hatch first"],
-      nos:["Not with the trunk or tailgate open"] },
-
-    { k:"tr_driver", t:"Driver Side", ic:"↔️", req:1, ex:"driver.jpg",
-      h:"Full side — show any dings",
-      s:"Straight on from the side, far enough back that the whole vehicle fits without zooming.",
-      tips:["Stand square to the middle of the vehicle",
-            "Get both wheels and the full length in frame",
-            "Shoot with the sun behind you, not behind the truck"],
-      nos:["Don't zoom in — walk back instead","Don't shoot into your own shadow"] },
-
-    { k:"tr_pass", t:"Passenger Side", ic:"↔️", req:1, ex:"pass.jpg",
-      h:"Full side — show any dings",
-      s:"The matching shot from the other side. This is where curb rash and door dings usually live.",
-      tips:["Square to the middle again, same distance",
-            "Full length in frame, both wheels showing"],
-      nos:["Don't skip it because \"it's the same as the other side\""] },
-
-    { k:"tr_interior", t:"Interior", ic:"🪑", req:1, ex:"interior.jpg",
-      h:"Front seats and dash",
-      s:"Open the driver's door and shoot across — dash, both front seats and the console.",
-      tips:["Open the door wide and stand outside it",
-            "Clear the floor and seats first — a clean car reads as a cared-for car",
-            "Turn the dome light on if it's dim"],
-      nos:["Not a close-up of the steering wheel","Don't crop the seats out"] },
-
-    { k:"tr_trunk", t:"Trunk / Cargo Area", ic:"🧳", req:1, ex:"trunk.jpg",
-      h:"Open it up and shoot straight in",
-      s:"Trunk or bed, opened and emptied. It tells us how the vehicle was actually lived in.",
-      tips:["Take everything out first, including the floor mat if it lifts",
-            "Stand back a step so the whole space is in frame",
-            "Show the spare tire well if it lifts easily"],
-      nos:["Not with gear or groceries still in it"] },
-
-    { k:"tr_odo", t:"Odometer", ic:"🔢", req:1, ex:"odo.jpg",
-      h:"The mileage reading",
-      s:"Key on so the cluster lights up, then get close enough that the numbers are sharp.",
-      tips:["Turn the key to accessory so the display is lit",
-            "Hold steady and let the phone focus before you tap",
-            "Every digit readable"],
-      nos:["Not through a glare on the cluster — move your angle"] },
-
-    { k:"tr_tread", t:"Tire Tread", ic:"🛞", req:1, ex:"tread.jpg",
-      h:"Close-up — how deep is the tread?",
-      s:"Crouch at a front tire and shoot straight into the tread. Tires are one of the biggest single swings in an appraisal.",
-      tips:["Get within a foot or two of the tread blocks",
-            "Shoot straight at the tread, not down at the sidewall",
-            "A penny or a quarter in the groove shows depth better than anything"],
-      nos:["Not a photo of the wheel and sidewall"] },
-
-    { k:"tr_damage", t:"Point Out Imperfections", ic:"👉", req:0, ex:"damage.jpg",
-      h:"Dents, scratches, cracked glass",
-      s:"Anything you'd point out if you were walking me around it — so put your finger right on it, like this. A flaw you showed us is priced in. A flaw we find at the appraisal is what changes your number at the desk.",
-      tips:["Point at it with your finger so we can't miss it",
-            "Get close, but leave enough around it that we can tell where on the vehicle it is",
-            "One shot per spot — take as many as you need",
-            "Nothing to show? Skip it. That's a good problem to have."],
-      nos:["Don't shoot it wet or in direct glare — it hides the depth"] } ];
+  /* Shot list, coaching copy and worked examples come from photo-guide.js, which
+     the trade evaluator loads too — the two tools have to ask for the same photos
+     in the same words or the customer gets taught twice, differently. */
+  var SHOTS = PhotoGuide.SHOTS;
 
   var SHOT = {};
   SHOTS.forEach(function (s) { SHOT[s.k] = s; });
@@ -984,49 +864,20 @@
   });
 
   /* ── example sheet ──────────────────────────────────────────── */
-  var ex = document.getElementById("ex"), exKey = null;
-
-  function openEx(k) {
-    var s = SHOT[k];
-    exKey = k;
-    document.getElementById("exT").textContent = s.t;
-    document.getElementById("exS").textContent = s.s;
-    document.getElementById("exTips").innerHTML =
-      s.tips.map(function (t) { return "<li>" + esc(t) + "</li>"; }).join("") +
-      s.nos.map(function (t) { return '<li class="no">' + esc(t) + "</li>"; }).join("");
-
-    var img = document.getElementById("exImg"), ph = document.getElementById("exPh");
-    document.getElementById("exPhIc").textContent = s.ic;
-    document.getElementById("exPhT").textContent = s.s;
-    img.hidden = true; ph.hidden = false;
-    img.onload  = function () { img.hidden = false; ph.hidden = true; };
-    img.onerror = function () { img.hidden = true;  ph.hidden = false; };
-    img.src = "photo-examples/" + s.ex;
-
-    document.getElementById("exGo").textContent =
-      files[k] ? "Retake this photo" : "Take this photo";
-    ex.hidden = false;
-    document.body.style.overflow = "hidden";
-  }
-  function closeEx() {
-    ex.hidden = true;
-    document.body.style.overflow = "";
-  }
-
   pgrid.addEventListener("click", function (e) {
     var b = e.target.closest(".pt-ex");
     if (!b) return;
-    // Inside a <label>, so stop the click before it opens the file picker too.
+    // The button sits inside a <label>, so stop the click before it also opens
+    // the file picker behind the sheet.
     e.preventDefault();
     e.stopPropagation();
-    openEx(b.dataset.ex);
-  });
-  document.getElementById("exX").addEventListener("click", closeEx);
-  ex.addEventListener("click", function (e) { if (e.target === ex) closeEx(); });
-  document.getElementById("exGo").addEventListener("click", function () {
-    var k = exKey;
-    closeEx();
-    pgrid.querySelector('[data-shot="' + k + '"] input').click();
+    var k = b.dataset.ex;
+    PhotoGuide.open(k, {
+      taken: !!files[k],
+      onTake: function (key) {
+        pgrid.querySelector('[data-shot="' + key + '"] input').click();
+      }
+    });
   });
 
   pdone();
