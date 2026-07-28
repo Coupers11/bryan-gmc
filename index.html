@@ -70,13 +70,39 @@ footer a{color:#8a95a1}
 </style>
 
 
+
 <style id="funnel-css">
 .cta-sub{font-size:12.5px;color:var(--mut);margin:13px 0 0;letter-spacing:.01em}
 .hero .btns{flex-wrap:wrap;justify-content:center}
+/* Countdown moved out of the hero and into the top strip. It was a 34px timer in a
+   black box competing with the headline; up here it's urgency without the shouting. */
+.ycount{display:flex!important;max-width:none!important;margin:0!important;
+  align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;
+  background:#111114!important;border:0!important;border-radius:0!important;
+  padding:9px 16px!important;box-shadow:none!important;text-align:center!important}
+.ycount:hover{transform:none!important}
+.yc-l{font-size:12px!important;letter-spacing:.05em;text-transform:uppercase;
+  color:#fff;opacity:.80;margin:0!important}
+.yc-timer{font-family:'Oswald',sans-serif!important;font-size:14px!important;
+  letter-spacing:.06em!important;margin:0!important;
+  background:var(--red);color:#fff;padding:4px 11px;border-radius:999px;
+  font-variant-numeric:tabular-nums}
+.yc-r{font-size:12px!important;color:#fff;opacity:.80;margin:0!important}
+.yc-r b{opacity:1}
+@media(max-width:620px){.yc-r{display:none}}
+/* Hero breathing room + a quieter, more premium type treatment. */
+.hero{padding-top:56px!important}
+.hero .kick{font-size:11.5px;letter-spacing:.16em;opacity:.72}
+.hero-tag{background:#111114!important;font-size:10.5px!important;letter-spacing:.14em!important}
 </style>
 </head><body>
 
 <a href="order-2027.html" style="display:block;background:#c8102e;color:#fff;text-align:center;padding:12px 16px;font-family:Oswald,sans-serif;font-weight:600;text-transform:uppercase;letter-spacing:.03em;font-size:14px;text-decoration:none">🔑 2027 Yukon Ordering July 30 — Only 8 of 12 Left · Reserve Now →</a>
+<!--TIMER--><a class="ycount" href="order-2027.html" id="ycount">
+  <div class="yc-l">🔑 2027 Yukon First-Round Order Closes In</div>
+  <div class="yc-timer" id="yctimer">— — — —</div>
+  <div class="yc-r">Only <b>8 of 12</b> allocations left · Reserve your slot →</div>
+</a><!--/TIMER-->
 <div class="hero"><div class="wrap">
 <img src="https://www.edmartinbuickgmc.com/static/dealer-19179/logo.png" alt="Ed Martin Buick GMC" style="height:42px;margin:0 auto 14px;display:block">
 <p class="kick">Coup's Automotive Solutions · Bryan Coup · Ed Martin Buick GMC · Indianapolis</p>
@@ -84,11 +110,7 @@ footer a{color:#8a95a1}
 <h1>Employee Pricing<br><span>For Everyone.</span></h1>
 <p class="sub">You don't have to know someone to get the best price in the building — <b>everyone gets employee pricing right now</b>, on both <b>buying and leasing</b>, across GMC &amp; Buick.</p>
 <!--CTA--><div class="btns"><a class="b1" href="express-checkin.html">✅ Get Approved In 6 Minutes</a><a class="b2" href="#ground">🔑 See The Denalis In Stock</a><a class="b2" href="tel:+14632140522">Call (463) 214-0522</a></div><p class="cta-sub">No credit hit to see your number · Approved before you arrive · Delivery available</p><!--/CTA-->
-<a class="ycount" href="order-2027.html" id="ycount">
-  <div class="yc-l">🔑 2027 Yukon First-Round Order Closes In</div>
-  <div class="yc-timer" id="yctimer">— — — —</div>
-  <div class="yc-r">Only <b>8 of 12</b> allocations left · Reserve your slot →</div>
-</a>
+
 
 <!--HS--><div class="hs">
 <style>
@@ -119,6 +141,7 @@ footer a{color:#8a95a1}
 </div><!--/HS-->
 <p class="trust"><b>⭐ 5.0</b> · 71 Google reviews · Approved before you arrive · Delivery available</p>
 </div></div>
+
 
 
 
@@ -313,6 +336,7 @@ and belong to their authors. Bryan Coup · Ed Martin Buick GMC, Carmel IN.</span
 <p class="lead">Denali Ultimate in a certain color. AT4X with the right packages. Tell me the build — if it exists in the pipeline, I'll find it and hold it.</p>
 <div class="btns"><a class="b1" href="sms:+14632140522?&body=Bryan%20—%20here's%20the%20exact%20build%20I%20want:%20">💬 Text Your Build →</a></div>
 </div></section>
+
 
 
 
