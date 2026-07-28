@@ -16,16 +16,16 @@
   var SHOTS = [
   { k:"tr_front", t:"Front Corner", ic:"🚗", req:1, ex:"front.jpg",
     h:"Angled — front and one side",
-    s:"Stand off the front-left corner so the grille and the driver's side are both in frame.",
+    s:"Stand off one front corner so the grille and a full side are both in frame.",
     tips:["Back up about ten feet and hold the phone level",
           "Turn the wheels straight before you shoot",
           "Bumper, both front wheels and the roofline all in frame"],
-    nos:["Not square-on from dead centre","Not so close the corners crop off"] },
+    nos:["Not square-on from dead center","Not so close the corners crop off"] },
 
   { k:"tr_rear", t:"Rear Corner", ic:"🔙", req:1, ex:"rear.jpg",
     h:"Angled — back and one side",
     s:"Same idea from the opposite corner, so between the two shots we've seen all four sides.",
-    tips:["Off the rear-right corner, ten feet back",
+    tips:["Whichever corner you didn't use for the front shot, ten feet back",
           "Tailgate, bumper and rear wheel all visible",
           "Close the tailgate or hatch first"],
     nos:["Not with the trunk or tailgate open"] },
@@ -166,8 +166,11 @@
       s.nos.map(function (t) { return '<li class="no">' + esc(t) + "</li>"; }).join("");
 
     var img = box.querySelector(".pgx-img"), ph = box.querySelector(".pgx-ph");
+    // The framing note is already the subtitle directly above this box. Repeating
+    // it inside made the sheet read like a stutter, so the placeholder says what
+    // it actually is and lets the checklist do the teaching.
     ph.querySelector("em").textContent = s.ic;
-    ph.querySelector("i").textContent = s.s;
+    ph.querySelector("i").textContent = "Sample photo coming soon — the checklist below is what matters.";
     img.hidden = true; ph.hidden = false;
     img.onload  = function () { img.hidden = false; ph.hidden = true; };
     img.onerror = function () { img.hidden = true;  ph.hidden = false; };
