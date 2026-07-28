@@ -613,7 +613,37 @@
     </div>
   </section>
 
-  <!-- 8 ── review ─────────────────────────────────────────────── -->
+  <!-- 8 ── anything else we asked for ──────────────────────────── -->
+  <section class="step" data-k="extra">
+    <h2>Anything else we asked for</h2>
+    <p class="lede">If Bryan or the finance office asked you for something specific, this is
+      where it goes. Nothing here is required — most people leave this screen blank and keep
+      going.</p>
+
+    <div class="info">
+      <b>The usual ones</b>
+      <ul class="tight">
+        <li>Two recent pay stubs — or last year's return if you're self-employed</li>
+        <li>A payoff letter from the lender on your trade</li>
+        <li>Proof of insurance for the new vehicle, if you've already called it in</li>
+        <li>A second form of ID — passport, state ID, Social Security card</li>
+        <li>Military, supplier or first-responder discount documentation</li>
+      </ul>
+    </div>
+
+    <label class="up" data-doc="extra_docs">
+      <input type="file" accept="image/*,application/pdf" multiple>
+      <span class="ic">📎</span>
+      <span><b>Add documents<span class="opt">Optional</span></b><small>Photos, screenshots
+        or PDFs — attach as many as you need</small></span>
+      <span class="chk">✓</span>
+    </label>
+
+    <label class="f"><span>Anything we should know? <span class="opt">Optional</span></span>
+      <textarea name="notes" rows="3" placeholder="Trade is at my parents' house, best to reach me after 5, that sort of thing."></textarea></label>
+  </section>
+
+  <!-- 9 ── review ─────────────────────────────────────────────── -->
   <section class="step" data-k="review">
     <h2>One last look</h2>
     <p class="lede">Tap any section to fix something before it goes over.</p>
@@ -696,7 +726,8 @@
   var LABELS = {
     start:"Welcome", you:"Your information", dl:"Driver's license",
     proof:"Proof of residence", ins:"Insurance", trade:"Trade-in",
-    credit:"Credit application", consent:"Authorization", review:"Review", done:"Done"
+    credit:"Credit application", consent:"Authorization", extra:"Other documents",
+    review:"Review", done:"Done"
   };
 
   /* Conditional steps. A step whose test returns false is skipped in both
@@ -1152,6 +1183,11 @@
       ["Monthly income", money(val("income"))],
       ["Paid", val("payFreq")],
       ["Co-applicant", val("hasCo") === "yes" ? (val("coName") || "Yes") : "No"]
+    ]);
+
+    card("Other documents", "extra", [
+      ["Attached", files.extra_docs ? files.extra_docs.length + " uploaded" : ""],
+      ["Note", val("notes")]
     ]);
 
     document.getElementById("summary").innerHTML = out;
