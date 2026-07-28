@@ -62,6 +62,20 @@
   input.bad,select.bad{border-color:var(--red);background:#fdf4f5}
   .row{display:flex;gap:11px}.row>*{flex:1}
   .hint{font-size:12px;color:var(--mut);margin:-9px 0 14px}
+  input:disabled{background:#f4f2ee;color:#a39f97;cursor:not-allowed;
+    -webkit-text-fill-color:#a39f97;opacity:1}
+
+  /* ── two-year history meter ────────────────────────────────────── */
+  /* Lenders want 24 unbroken months. Showing the gap as a bar is the difference
+     between "why are you asking me this?" and "oh — I'm four months short". */
+  .tl{display:flex;align-items:center;gap:11px;margin:-4px 0 16px;font-size:12.5px}
+  .tl[hidden]{display:none}
+  .tl-bar{flex:1;height:6px;border-radius:3px;background:#e7e4de;overflow:hidden}
+  .tl-bar i{display:block;height:100%;width:0;background:var(--red);
+    border-radius:3px;transition:width .25s}
+  .tl.ok .tl-bar i{background:var(--ok)}
+  .tl-t{color:var(--mut);white-space:nowrap}
+  .tl.ok .tl-t{color:var(--ok);font-weight:600}
 
   /* ── yes/no pills ──────────────────────────────────────────────── */
   .pills{display:flex;gap:9px;margin-bottom:16px}
@@ -453,10 +467,14 @@
     <h3>Personal</h3>
     <label class="f"><span>Date of birth <i class="req">*</i></span>
       <input type="date" name="dob" required></label>
+    <label class="f"><span>Social Security number <i class="req">*</i></span>
+      <input type="text" name="ssn" placeholder="•••–••–••••" autocomplete="off"
+             disabled data-live-req="1"></label>
     <div class="info">
-      <b>Social Security number</b>
-      The live version collects your SSN here over an encrypted connection, visible only to
-      our finance manager. It is left out of this preview on purpose.
+      <b>This field is switched off in the preview.</b>
+      The live version accepts your SSN over an encrypted connection and it is visible only
+      to our finance manager. It's shown here so you can see where it sits in the flow —
+      please don't type a real one into a demo.
     </div>
 
     <h3>Housing</h3>
@@ -472,11 +490,33 @@
       <label class="f"><span>Monthly payment <i class="req">*</i></span>
         <input type="tel" name="housePmt" inputmode="numeric" placeholder="$" required></label>
     </div>
-    <label class="f"><span>How long at this address? <i class="req">*</i></span>
-      <input type="text" name="addrYears" placeholder="3 years 2 months" required></label>
-    <div class="note" id="prevAddrNote" hidden>
-      <b>Under two years?</b> Bring or add your previous address — lenders ask for a
-      two-year history. Your salesperson will grab it when you come in.
+    <div class="row">
+      <label class="f"><span>Years at this address <i class="req">*</i></span>
+        <select name="addrYrs" data-yrs required></select></label>
+      <label class="f"><span>Plus months <i class="req">*</i></span>
+        <select name="addrMos" data-mos required></select></label>
+    </div>
+    <div class="tl" id="addrTL"></div>
+
+    <div id="prevAddr" hidden>
+      <h3>Previous address</h3>
+      <p class="hint">Lenders want two unbroken years. You're short, so we need the address
+        before this one — same as we'd ask at the desk, just without the clipboard.</p>
+      <label class="f"><span>Street address <i class="req">*</i></span>
+        <input type="text" name="pAddr" required></label>
+      <div class="row">
+        <label class="f"><span>City <i class="req">*</i></span>
+          <input type="text" name="pCity" required></label>
+        <label class="f"><span>State <i class="req">*</i></span>
+          <input type="text" name="pState" maxlength="2" placeholder="IN" required></label>
+      </div>
+      <div class="row">
+        <label class="f"><span>Years there <i class="req">*</i></span>
+          <select name="pAddrYrs" data-yrs required></select></label>
+        <label class="f"><span>Plus months <i class="req">*</i></span>
+          <select name="pAddrMos" data-mos required></select></label>
+      </div>
+      <div class="tl" id="pAddrTL"></div>
     </div>
 
     <h3>Employment</h3>
@@ -487,10 +527,32 @@
         <input type="text" name="jobTitle" required></label>
     </div>
     <div class="row">
-      <label class="f"><span>Time there <i class="req">*</i></span>
-        <input type="text" name="jobYears" placeholder="5 years" required></label>
-      <label class="f"><span>Work phone</span>
-        <input type="tel" name="workPhone"></label>
+      <label class="f"><span>Years there <i class="req">*</i></span>
+        <select name="jobYrs" data-yrs required></select></label>
+      <label class="f"><span>Plus months <i class="req">*</i></span>
+        <select name="jobMos" data-mos required></select></label>
+    </div>
+    <div class="tl" id="jobTL"></div>
+    <label class="f"><span>Work phone</span>
+      <input type="tel" name="workPhone"></label>
+
+    <div id="prevJob" hidden>
+      <h3>Previous employer</h3>
+      <p class="hint">Under two years at the current one, so the lender will want the job
+        before it. Two minutes now beats a phone call on delivery day.</p>
+      <div class="row">
+        <label class="f"><span>Employer <i class="req">*</i></span>
+          <input type="text" name="pEmployer" required></label>
+        <label class="f"><span>Job title <i class="req">*</i></span>
+          <input type="text" name="pJobTitle" required></label>
+      </div>
+      <div class="row">
+        <label class="f"><span>Years there <i class="req">*</i></span>
+          <select name="pJobYrs" data-yrs required></select></label>
+        <label class="f"><span>Plus months <i class="req">*</i></span>
+          <select name="pJobMos" data-mos required></select></label>
+      </div>
+      <div class="tl" id="pJobTL"></div>
     </div>
     <div class="row">
       <label class="f"><span>Gross monthly income <i class="req">*</i></span>
@@ -697,6 +759,12 @@
     var bad = null;
 
     sec.querySelectorAll("[required]").forEach(function (el) {
+      // Conditional blocks (previous address, previous employer, co-applicant)
+      // live in the same section as everything else. If one doesn't apply it is
+      // hidden, and a hidden field must never be what stops someone.
+      var box = el.closest("[hidden]");
+      if (box) { el.classList.remove("bad"); return; }
+
       var ok = el.type === "radio"
         ? !!form.querySelector('[name="' + el.name + '"]:checked')
         : !!el.value.trim();
@@ -943,13 +1011,66 @@
     save();
   });
 
-  form.elements.addrYears.addEventListener("input", function (e) {
-    // Lenders want a two-year address history; warn as soon as we can tell.
-    var m = /(\d+)\s*(y|year)/i.exec(e.target.value);
-    var under = /month/i.test(e.target.value) && !m;
-    document.getElementById("prevAddrNote").hidden =
-      !(under || (m && +m[1] < 2));
+  /* ── two-year history ───────────────────────────────────────── */
+  /* Free text ("a while", "since '19") is unusable to a lender and impossible to
+     validate, so time is entered as years + months and the 24-month rule is
+     enforced here instead of being discovered at the desk three days later. */
+  var NEED = 24;
+
+  form.querySelectorAll("[data-yrs]").forEach(function (s) {
+    s.innerHTML = '<option value="">Years…</option>' +
+      Array.from({ length: 31 }, function (_, n) {
+        return '<option value="' + n + '">' + n + (n === 30 ? "+" : "") + '</option>';
+      }).join("");
   });
+  form.querySelectorAll("[data-mos]").forEach(function (s) {
+    s.innerHTML = '<option value="">Months…</option>' +
+      Array.from({ length: 12 }, function (_, n) {
+        return '<option value="' + n + '">' + n + '</option>';
+      }).join("");
+  });
+
+  function months(y, m) {
+    var a = val(y), b = val(m);
+    return a === "" && b === "" ? null : (+a || 0) * 12 + (+b || 0);
+  }
+  function span(n) {
+    var y = Math.floor(n / 12), m = n % 12;
+    return (y ? y + (y === 1 ? " year" : " years") : "") +
+           (y && m ? " " : "") +
+           (m ? m + (m === 1 ? " month" : " months") : "") || "0 months";
+  }
+  function meter(el, have, extra) {
+    var tl = document.getElementById(el);
+    if (have === null) { tl.hidden = true; return; }
+    var total = have + (extra || 0), ok = total >= NEED;
+    tl.hidden = false;
+    tl.classList.toggle("ok", ok);
+    tl.innerHTML = '<span class="tl-bar"><i style="width:' +
+      Math.min(100, total / NEED * 100) + '%"></i></span>' +
+      '<span class="tl-t">' + (ok
+        ? "✓ " + span(total) + " — that covers it"
+        : span(NEED - total) + " short of two years") + "</span>";
+  }
+
+  function hist() {
+    var a  = months("addrYrs", "addrMos"),
+        pa = months("pAddrYrs", "pAddrMos"),
+        j  = months("jobYrs", "jobMos"),
+        pj = months("pJobYrs", "pJobMos");
+
+    // A block only appears once we know the current answer is short — nobody
+    // should see "previous employer" before they've said how long they've been
+    // at this one.
+    document.getElementById("prevAddr").hidden = !(a !== null && a < NEED);
+    document.getElementById("prevJob").hidden  = !(j !== null && j < NEED);
+
+    meter("addrTL", a, 0);
+    meter("jobTL",  j, 0);
+    if (a !== null && a < NEED) meter("pAddrTL", pa, a);
+    if (j !== null && j < NEED) meter("pJobTL",  pj, j);
+  }
+  form.addEventListener("change", hist);
 
   form.elements.phone.addEventListener("input", function (e) {
     var d = e.target.value.replace(/\D/g, "").slice(0, 10);
@@ -1021,8 +1142,13 @@
       ["Date of birth", val("dob")],
       ["Housing", val("housing")],
       ["Monthly payment", money(val("housePmt"))],
+      ["Time at address", months("addrYrs", "addrMos") === null ? "" : span(months("addrYrs","addrMos"))],
+      ["Previous address", document.getElementById("prevAddr").hidden ? "" :
+        [val("pAddr"), val("pCity"), val("pState")].filter(Boolean).join(", ")],
       ["Employer", val("employer")],
-      ["Position", val("jobTitle") + (val("jobYears") ? " · " + val("jobYears") : "")],
+      ["Position", val("jobTitle")],
+      ["Time on the job", months("jobYrs", "jobMos") === null ? "" : span(months("jobYrs","jobMos"))],
+      ["Previous employer", document.getElementById("prevJob").hidden ? "" : val("pEmployer")],
       ["Monthly income", money(val("income"))],
       ["Paid", val("payFreq")],
       ["Co-applicant", val("hasCo") === "yes" ? (val("coName") || "Yes") : "No"]
