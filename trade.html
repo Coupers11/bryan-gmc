@@ -3,6 +3,9 @@
 <meta name="description" content="Get a fair, honest value on your trade — a guided walkthrough, then a real number from Bryan within the hour. No lowball algorithms.">
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/@zxing/library@0.21.3/umd/index.min.js"></script>
+<!-- Barcode location + decoding. Kept out of this file so it can be tested on real
+     door-jamb photos on its own, which is how the crop-first approach was found. -->
+<script src="vin-scan.js"></script>
 <!-- The shot list and the photo coaching are shared with express-checkin.html.
      Same car, same customer, same request — so it has to be the same words. -->
 <script src="photo-guide.js"></script>
@@ -262,50 +265,45 @@ function docListHTML(){
  return '<div class="docs">'+state.docs.map((d,i)=>`<div class="docitem">${d.thumb?`<img src="${d.thumb}">`:'<span class="pdf">PDF</span>'}<span class="dn">${d.name.slice(0,22)}</span><button class="rm" onclick="rmDoc(${i})">✕</button></div>`).join('')+'</div>';
 }
 function chkC(){const b=document.getElementById('cnext');if(b)b.disabled=!(state.name&&state.phone);}
-let _reader=null;
-function extractVin(t){const m=(t||'').toUpperCase().replace(/[^A-HJ-NPR-Z0-9]/g,'').match(/[A-HJ-NPR-Z0-9]{17}/);return m?m[0]:'';}
-let _hintTimer=null;
+/* ── VIN scanner ───────────────────────────────────────────────────────────
+   The decoding itself lives in vin-scan.js, which locates the barcode and crops
+   to it before decoding — measured against a real door-jamb photo that no
+   whole-frame attempt could read at any resolution. This file only runs the
+   camera and the UI around it. */
+let _stream=null,_raf=null,_busy=false,_hintTimer=null,_pending=null,_track=null;
+function extractVin(t){return VinScan.extractVin(t);}
+
 async function openScanner(){
  const w=document.getElementById('scanwrap');w.classList.add('on');
  const help=document.getElementById('scanhelp');if(help)help.classList.remove('on');
- if(typeof ZXing==="undefined"){
+ const torch=document.getElementById('scantorch');if(torch)torch.style.display='none';
+ _pending=null;
+ if(!VinScan.available()){
   closeScanner();
   alert("The scanner didn't load — check your connection, or just type the VIN in. It's on the driver's door jamb sticker.");
   return;
  }
  try{
-  // A VIN door-jamb sticker is Code 39; registrations and window stickers use
-  // Code 128, PDF417 or Data Matrix. Naming the formats and turning on TRY_HARDER
-  // is the difference between reading a dense 17-character 1D barcode and staring
-  // at it — the default hint set gives every format an equal, shallower look.
-  const hints=new Map();
-  hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS,[
-   ZXing.BarcodeFormat.CODE_39,ZXing.BarcodeFormat.CODE_128,
-   ZXing.BarcodeFormat.PDF_417,ZXing.BarcodeFormat.DATA_MATRIX,
-   ZXing.BarcodeFormat.QR_CODE]);
-  hints.set(ZXing.DecodeHintType.TRY_HARDER,true);
-  _reader=new ZXing.BrowserMultiFormatReader(hints);
-
-  // decodeFromVideoDevice(null, …) takes whatever device is first in the list,
-  // which on a phone is the selfie camera — so the old scanner was pointing at
-  // the customer. Ask for the rear camera by name, and for as many pixels as the
-  // phone will give: a 17-character Code 39 needs the resolution to resolve bars.
-  await _reader.decodeFromConstraints(
+  // Ask for the rear camera by name and for every pixel the phone will give.
+  // Resolution is not a nicety here: below about 1920 across, a 17-character
+  // Code 39 stops having enough width per bar to survive binarisation, and the
+  // scan fails no matter how well it's framed.
+  _stream=await navigator.mediaDevices.getUserMedia(
    {video:{facingMode:{ideal:"environment"},
-           width:{ideal:1920},height:{ideal:1080}}},
-   'scanvid',
-   (res)=>{
-    if(!res)return;                       // no-read fires constantly; it isn't an error
-    const vin=extractVin(res.getText());
-    if(vin&&vin.length===17){
-     if(navigator.vibrate)navigator.vibrate(60);
-     state.vin=vin;closeScanner();scannedGo(vin);
-    }
-   });
+           width:{ideal:2560},height:{ideal:1440}}});
+  const v=document.getElementById('scanvid');
+  v.srcObject=_stream;v.setAttribute('playsinline','');await v.play();
 
-  // If it hasn't read anything in twelve seconds, stop letting them hunt in
-  // silence and point at the way out.
-  _hintTimer=setTimeout(()=>{const h=document.getElementById('scanhelp');if(h)h.classList.add('on');},12000);
+  // Offer the torch if the hardware exposes it — a door jamb is a shaded place
+  // and the label is glossy, which is exactly the low-contrast case that fails.
+  _track=_stream.getVideoTracks()[0];
+  const caps=_track.getCapabilities?_track.getCapabilities():{};
+  if(caps.torch&&torch)torch.style.display='';
+
+  _busy=false;loop();
+  // If it hasn't read anything in ten seconds, stop letting them hunt in silence
+  // and point at the two ways out.
+  _hintTimer=setTimeout(()=>{const h=document.getElementById('scanhelp');if(h)h.classList.add('on');},10000);
  }catch(e){
   closeScanner();
   const n=e&&e.name;
@@ -316,10 +314,72 @@ async function openScanner(){
    : "Camera unavailable — please type your VIN in below. ("+(e&&e.message||n||"unknown")+")");
  }
 }
+
+/* One pass costs 120-200ms, so this is deliberately not every frame — it yields
+   between attempts to keep the preview smooth. */
+function loop(){
+ _raf=requestAnimationFrame(loop);
+ if(_busy)return;
+ const v=document.getElementById('scanvid');
+ if(!v||!v.videoWidth)return;
+ _busy=true;
+ setTimeout(()=>{
+  let r=null;
+  try{ r=VinScan.scan(v); }catch(e){}
+  _busy=false;
+  // A pass takes a fifth of a second; the customer can hit Cancel inside that
+  // window, and a late result must not drag them back into a closed scanner.
+  if(r&&_stream)accept(r);
+ },0);
+}
+
+/* A VIN with a good check digit is accepted on the spot. One that fails the check
+   digit could be a misread, so it has to come up twice in a row before we trust it. */
+function accept(r){
+ if(!r.valid){
+  if(_pending!==r.vin){_pending=r.vin;return;}
+ }
+ if(navigator.vibrate)navigator.vibrate(60);
+ state.vin=r.vin;closeScanner();scannedGo(r.vin);
+}
+
+function toggleTorch(){
+ if(!_track)return;
+ const on=!_track.__torch;
+ _track.applyConstraints({advanced:[{torch:on}]}).then(()=>{
+  _track.__torch=on;
+  const b=document.getElementById('scantorch');if(b)b.textContent=on?'🔦 Light on':'🔦 Light';
+ }).catch(()=>{});
+}
+
+/* The still-photo way out. A photo is full sensor resolution and properly focused,
+   which is a much easier problem than a video frame — the reference door-jamb shot
+   decodes this way and never decoded from a live frame. */
+function scanStill(inp){
+ const f=inp.files&&inp.files[0];inp.value='';
+ if(!f)return;
+ const st=document.getElementById('scanhelp');
+ if(st){st.classList.add('on');st.textContent='Reading the photo…';}
+ const img=new Image();
+ img.onload=()=>{
+  let r=null;
+  try{ r=VinScan.scan(img); }catch(e){}
+  URL.revokeObjectURL(img.src);
+  if(r){state.vin=r.vin;closeScanner();scannedGo(r.vin);return;}
+  if(st)st.textContent="Couldn't read that one — get closer so the barcode fills most of the photo, or tap Cancel and type the VIN in.";
+ };
+ img.onerror=()=>{if(st)st.textContent="Couldn't open that photo — type the VIN in instead.";};
+ img.src=URL.createObjectURL(f);
+}
+
 function closeScanner(){const w=document.getElementById('scanwrap');w.classList.remove('on');
- clearTimeout(_hintTimer);
- const h=document.getElementById('scanhelp');if(h)h.classList.remove('on');
- try{_reader&&_reader.reset();}catch(e){}_reader=null;}
+ clearTimeout(_hintTimer);cancelAnimationFrame(_raf);_raf=null;_busy=false;_pending=null;
+ const h=document.getElementById('scanhelp');
+ if(h){h.classList.remove('on');h.textContent=h.dataset.msg||h.textContent;}
+ try{if(_track&&_track.__torch)_track.applyConstraints({advanced:[{torch:false}]});}catch(e){}
+ try{_stream&&_stream.getTracks().forEach(t=>t.stop());}catch(e){}
+ _stream=null;_track=null;
+ const v=document.getElementById('scanvid');if(v)v.srcObject=null;}
 async function scannedGo(vin){
  render();                       // repaint VIN step showing the scanned VIN
  const inp=document.getElementById('vin');if(inp)inp.value=vin;
@@ -376,11 +436,22 @@ render();
   <video id="scanvid" playsinline></video>
   <div class="scan-ov">
     <div class="scan-frame"><div class="scan-line"></div></div>
-    <p class="scan-tip">Point at your VIN barcode</p>
-    <p class="scan-sub">Driver's door jamb sticker, or the barcode on your registration</p>
-    <p class="scan-help" id="scanhelp">Not catching it? Hold steady about six inches back and make sure
-      the whole barcode is inside the box — or tap Cancel and type the VIN in, it's just as quick.</p>
-    <button class="scan-x" onclick="closeScanner()">✕ Cancel</button>
+    <p class="scan-tip">Fill the box with the barcode</p>
+    <p class="scan-sub">Driver's door jamb sticker, or the barcode on your registration.
+      Get close — the barcode should run nearly wall to wall. Sideways is fine.</p>
+    <p class="scan-help" id="scanhelp"
+       data-msg="Not catching it? Get closer until the barcode nearly fills the box, and tap 🔦 if the jamb is dark. Still nothing — use Snap a photo instead, or Cancel and type the VIN in.">Not catching it?
+      Get closer until the barcode nearly fills the box, and tap 🔦 if the jamb is dark.
+      Still nothing — use Snap a photo instead, or Cancel and type the VIN in.</p>
+    <!-- A still is full sensor resolution and actually focused. The reference
+         door-jamb photo decodes that way and never decoded from a live frame, so
+         this is the dependable path and it gets top billing accordingly. -->
+    <label class="scan-snap">📸 Snap a photo instead
+      <input type="file" accept="image/*" capture="environment" onchange="scanStill(this)"></label>
+    <div class="scan-btns">
+      <button class="scan-x" onclick="closeScanner()">✕ Cancel</button>
+      <button class="scan-x" id="scantorch" style="display:none" onclick="toggleTorch()">🔦 Light</button>
+    </div>
   </div>
 </div>
 <style>
@@ -388,7 +459,14 @@ render();
 .scanwrap.on{display:flex}
 #scanvid{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .scan-ov{position:relative;z-index:2;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;text-align:center;padding:20px}
-.scan-frame{width:min(80vw,340px);height:130px;border:3px solid #fff;border-radius:16px;box-shadow:0 0 0 2000px rgba(0,0,0,.55);position:relative;overflow:hidden;margin-bottom:22px}
+/* Wider and shorter than before, and deliberately barcode-shaped: the box is the
+   instruction. A label framed to fill this is a label with enough pixels per bar. */
+.scan-frame{width:min(92vw,420px);height:150px;border:3px solid #fff;border-radius:16px;box-shadow:0 0 0 2000px rgba(0,0,0,.55);position:relative;overflow:hidden;margin-bottom:22px}
+.scan-btns{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.scan-snap{position:relative;overflow:hidden;display:block;width:min(92vw,420px);
+ box-sizing:border-box;background:var(--red);color:#fff;border-radius:11px;padding:14px;
+ font-family:inherit;font-weight:700;font-size:15px;cursor:pointer;margin-bottom:12px}
+.scan-snap input{position:absolute;inset:0;opacity:0;cursor:pointer;font-size:0}
 .scan-line{position:absolute;left:0;right:0;height:3px;background:var(--red);box-shadow:0 0 12px var(--red);animation:scanmove 2s ease-in-out infinite}
 @keyframes scanmove{0%{top:6%}50%{top:90%}100%{top:6%}}
 .scan-tip{font-family:'Oswald',sans-serif;font-size:20px;text-transform:uppercase;margin-bottom:6px}
