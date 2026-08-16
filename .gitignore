@@ -1,0 +1,44 @@
+# This repository is PUBLIC. Anything committed here is world-readable
+# and stays in git history even after deletion. Keep secrets out.
+
+# Secrets — every variant
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*secret*
+*credential*
+*token*
+
+# Databases and customer data — never in a public repo
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+*.csv
+leads/
+customers/
+uploads/
+
+# Dependencies and build output
+node_modules/
+venv/
+__pycache__/
+*.py[cod]
+dist/
+build/
+
+# Editor and OS noise
+.DS_Store
+.AppleDouble
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+
+# Logs
+*.log
+logs/
