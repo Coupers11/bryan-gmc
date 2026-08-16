@@ -1,6 +1,17 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>2027 GMC Yukon — First-Round Ordering 7/30 | Reserve Your Allocation | Coup's Automotive Solutions</title>
-<meta name="description" content="2027 GMC Denali & Denali Ultimate ordering opens soon. We have limited allocation — reserve your build spot before it's gone. Sierra & Yukon Denali/Ultimate.">
+<!-- Title and description are deliberately not date-stamped. The previous ones said
+     "7/30", which a crawler kept serving for weeks after that date had gone by. The
+     live date lives in ORDER_DATE at the bottom of this file and nowhere else. -->
+<title>2027 GMC Yukon — Reserve Your Allocation | Coup's Automotive Solutions</title>
+<meta name="description" content="2027 GMC Denali &amp; Denali Ultimate build spots. We have limited allocation — reserve yours and we spec the exact truck. Sierra &amp; Yukon Denali/Ultimate, Indianapolis.">
+<meta name="theme-color" content="#c8102e">
+<meta property="og:type" content="website">
+<meta property="og:title" content="2027 GMC Yukon — Reserve Your Allocation">
+<meta property="og:description" content="Limited first-round allocation. Pick the exact build, we hold your slot.">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23c8102e'/%3E%3Ctext x='16' y='23' font-family='Helvetica,Arial,sans-serif' font-size='19' font-weight='bold' fill='%23fff' text-anchor='middle'%3EC%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{--red:#c8102e;--bg:#faf9f7;--panel:#ffffff;--line:#e7e4de;--txt:#111114;--mut:#6b6862;--soft:#f4f2ee;--green:#1a8f42;--gold:#b5892b}
@@ -8,7 +19,9 @@
 body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--txt);line-height:1.55}
 .wrap{max-width:1000px;margin:0 auto;padding:0 20px}
 a{color:inherit}
-.bar{padding:16px 0}.bar a{font-size:13px;color:var(--mut);text-decoration:none}
+/* Both of these are inline links that came out ~14px tall on a phone — under any
+   touch guideline, and the footer one is a phone number. */
+.bar{padding:8px 0}.bar a{font-size:13px;color:var(--mut);text-decoration:none;display:inline-block;padding:10px 10px 10px 0}
 .hero{background:linear-gradient(150deg,#111114,#26282e);border-radius:22px;padding:44px 36px;color:#fff;text-align:center;margin-bottom:14px;position:relative;overflow:hidden}
 .hero:before{content:"";position:absolute;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,rgba(200,16,46,.18),transparent 62%);top:-180px;right:-140px}
 .hero .eb{position:relative;font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:#ff9aa8;font-weight:700;margin-bottom:12px}
@@ -53,15 +66,15 @@ footer{padding:34px 0;text-align:center;color:#8a867d;font-size:12px;border-top:
 <div class="wrap">
 <div class="bar"><a href="index.html">‹ Coup's Automotive Solutions</a></div>
 <div class="hero">
-  <p class="eb">🔑 The Access List · First-Round Ordering July 30</p>
-  <h1>2027 GMC Yukon<br><span>First-Round Ordering July 30</span></h1>
-  <p>Our first-round 2027 Yukon order goes in <b>July 30</b> — and we have <b>8 of our 12 allocations left</b>. Lock in your exact Yukon Denali or Denali Ultimate build now, before the round fills. Miss it and you're waiting for round two.</p>
+  <p class="eb" id="eb">🔑 The Access List</p>
+  <h1>2027 GMC Yukon<br><span id="h1sub">Reserve Your Allocation</span></h1>
+  <p id="herop"></p>
   <div class="count" id="count"></div>
-  <div class="cl" id="cl">Until ordering opens</div>
+  <div class="cl" id="cl"></div>
 </div>
 
 <div class="signup">
-  <div class="su-l"><div class="su-eb">⚡ 8 of 12 spots remaining · ordering closes July 30</div>
+  <div class="su-l"><div class="su-eb" id="suEb"></div>
   <div class="su-h">Sign Up Now — Lock Your Yukon Slot</div>
   <div class="su-p">No deposit to reserve. Pick your build, we hold your allocation, and your order goes in first when the round opens.</div></div>
   <a class="su-btn" href="sms:+14632140522?&body=Bryan%20—%20SIGN%20ME%20UP%20for%20a%202027%20Yukon%20allocation.%20I%20want:%20">Reserve My Slot →</a>
@@ -86,7 +99,7 @@ footer{padding:34px 0;text-align:center;color:#8a867d;font-size:12px;border-top:
 </div>
 
 <p class="eyebrow">Live Allocation Board</p>
-<h2 class="sec">Our 12 Yukon Allocations — 8 Left</h2>
+<h2 class="sec" id="boardHead">Our Yukon Allocations</h2>
 <p class="lead">Green = open to claim · Gray = already spoken for. Updated as spots fill — first text, first hold.</p>
 
 <div id="board"></div>
@@ -95,9 +108,18 @@ footer{padding:34px 0;text-align:center;color:#8a867d;font-size:12px;border-top:
   <h2>Not Sure Which Build?</h2>
   <p>Tell me what you're after — Sierra or Yukon, Denali or Ultimate, your must-have options — and I'll match you to the right slot and walk you through the whole spec.</p>
   <a href="sms:+14632140522?&body=Bryan%20—%20I%20want%20to%20reserve%20a%202027%20Denali%20build%20spot.%20I'm%20looking%20for:%20">💬 Reserve My 2027 Build Spot</a>
+  <!-- Every claim path on this page is an sms: link, which does nothing at all on a
+       desktop browser. Anyone who gets here from a forwarded link on a laptop needs
+       one control that works everywhere. -->
+  <p class="cta-alt">Not on a phone? Call or text <a href="tel:+14632140522">(463) 214-0522</a>.</p>
 </div>
+<style>
+.cta-alt{font-size:13.5px;color:var(--mut);margin:16px 0 0}
+.cta-alt a,footer a{color:var(--red);font-weight:700;text-decoration:none;white-space:nowrap;
+ display:inline-block;padding:9px 12px;margin:2px -4px;border-radius:8px;background:#fdf3f4;line-height:1.2}
+</style>
 
-<footer>Coup's Automotive Solutions · Bryan Coup at Ed Martin Buick GMC · (463) 214-0522<br>Allocation is limited and subject to GM confirmation. Reserving a spot is no-obligation until your order is finalized.</footer>
+<footer>Coup's Automotive Solutions · Bryan Coup at Ed Martin Buick GMC · <a href="tel:+14632140522">(463) 214-0522</a><br>Allocation is limited and subject to GM confirmation. Reserving a spot is no-obligation until your order is finalized.</footer>
 </div>
 <script>
 // ORDER DATE — edit this when GM confirms. Default: 14 days out.
@@ -108,10 +130,48 @@ const ALLOC = [
  {model:"2027 Yukon Denali Ultimate", slots:["taken","taken","open","open","open"]},
 ];
 const SMS="+14632140522";
+
+/* Counts used to be typed into the copy in four places and into ALLOC a fifth
+   time. They had already drifted apart once. Everything the page says about how
+   many spots are left is now counted off the board itself. */
+const SLOTS=ALLOC.reduce((a,m)=>a.concat(m.slots),[]);
+const TOTAL=SLOTS.length, OPEN=SLOTS.filter(s=>s==='open').length;
+const DATE_TXT=ORDER_DATE.toLocaleDateString('en-US',{month:'long',day:'numeric'});
+
+/* The page used to hard-code "July 30" in the headline, the hero, the signup band
+   and the <title>, while the countdown was the only thing that knew the date had
+   arrived. Once it passed, the countdown flipped to OPEN and the rest of the page
+   went on advertising a deadline that was already behind us. All of that copy is
+   written from ORDER_DATE now, and there is a real state for "the round opened". */
+function copy(){
+ const passed=ORDER_DATE-new Date()<=0;
+ const left=OPEN+' of '+TOTAL+' allocation'+(TOTAL===1?'':'s')+' left';
+ const set=(id,txt)=>{const e=document.getElementById(id);if(e)e.innerHTML=txt;};
+
+ set('boardHead','Our '+TOTAL+' Yukon Allocations — '+OPEN+' Left');
+ if(passed){
+  set('eb','🔑 The Access List · First-Round Ordering Is Open');
+  set('h1sub','First Round Is Open Now');
+  set('herop','First-round ordering opened <b>'+DATE_TXT+'</b> and we have <b>'+left+
+      '</b>. Text me and I\'ll tell you exactly what is still open, then we spec your '+
+      'Yukon Denali or Denali Ultimate build and it goes in on this round.');
+  set('cl','First round opened '+DATE_TXT);
+  set('suEb','⚡ '+OPEN+' of '+TOTAL+' spots remaining · first round is open now');
+ }else{
+  set('eb','🔑 The Access List · First-Round Ordering '+DATE_TXT);
+  set('h1sub','First-Round Ordering '+DATE_TXT);
+  set('herop','Our first-round 2027 Yukon order goes in <b>'+DATE_TXT+'</b> — and we have <b>'+
+      left+'</b>. Lock in your exact Yukon Denali or Denali Ultimate build now, before the '+
+      'round fills. Miss it and you\'re waiting for round two.');
+  set('cl','Until ordering opens');
+  set('suEb','⚡ '+OPEN+' of '+TOTAL+' spots remaining · ordering closes '+DATE_TXT);
+ }
+}
+
 function pad(n){return String(n).padStart(2,'0');}
 function tick(){
  const d=ORDER_DATE-new Date();const c=document.getElementById('count');
- if(d<=0){c.innerHTML='<div class="u" style="min-width:auto;padding:12px 24px"><div class="n">OPEN</div></div>';document.getElementById('cl').textContent='Ordering is open — reserve now!';return;}
+ if(d<=0){c.innerHTML='<div class="u" style="min-width:auto;padding:12px 24px"><div class="n">OPEN</div></div>';return;}
  const days=Math.floor(d/864e5),h=Math.floor(d%864e5/36e5),m=Math.floor(d%36e5/6e4),s=Math.floor(d%6e4/1e3);
  c.innerHTML=[[days,'Days'],[h,'Hours'],[m,'Min'],[s,'Sec']].map(u=>`<div class="u"><div class="n">${pad(u[0])}</div><div class="l">${u[1]}</div></div>`).join('');
 }
@@ -128,5 +188,13 @@ function board(){
   return `<div class="model"><h3>${m.model} <span class="avail">${open} of ${m.slots.length} open</span></h3><div class="slots">${cells}</div></div>`;
  }).join('');
 }
-tick();setInterval(tick,1000);board();
+/* If the deadline rolls over while somebody has the page open, the copy has to
+   follow the countdown instead of contradicting it. */
+let _passed=ORDER_DATE-new Date()<=0;
+setInterval(function(){
+ const now=ORDER_DATE-new Date()<=0;
+ if(now!==_passed){_passed=now;copy();}
+},1000);
+
+copy();tick();setInterval(tick,1000);board();
 </script></body></html>

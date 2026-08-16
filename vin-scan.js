@@ -27,10 +27,15 @@
 (function (w, d) {
   "use strict";
 
-  var Z = w.ZXing;
+  // Looked up on use, not at load. available() already reads w.ZXing live, so
+  // binding the library here meant the two could disagree — a deferred or slow
+  // CDN load would leave available() saying yes while every decode threw on an
+  // undefined Z.
+  function zx() { return w.ZXing; }
   var reader = null;
 
   function hints() {
+    var Z = zx();
     var h = new Map();
     // A door-jamb VIN sticker is Code 39. Registrations and window stickers use
     // Code 128 or ITF. Naming the formats keeps the reader from spreading its
@@ -173,6 +178,8 @@
   }
 
   function decodeCanvas(c) {
+    var Z = zx();
+    if (!Z) return null;
     if (!reader) { reader = new Z.MultiFormatReader(); reader.setHints(hints()); }
     try {
       return reader.decode(new Z.BinaryBitmap(new Z.HybridBinarizer(
@@ -196,8 +203,12 @@
       // needs its quiet zone, and a tight box clips the start/stop characters.
       [0.10, 0.30, 0.60].forEach(function (pad) {
         var px = b.w * pad, py = b.h * pad;
-        boxes.push([Math.max(0, b.x - px), Math.max(0, b.y - py),
-                    Math.min(W, b.w + 2 * px), Math.min(H, b.h + 2 * py)]);
+        var x = Math.max(0, b.x - px), y = Math.max(0, b.y - py);
+        // Clamp against what is left from x, not against the full frame width. A
+        // label near an edge padded out to 60% ran the crop off the end of the
+        // source, and drawImage fills that overhang with transparent black — a
+        // hard artificial edge sitting exactly where the quiet zone needs to be.
+        boxes.push([x, y, Math.min(W - x, b.w + 2 * px), Math.min(H - y, b.h + 2 * py)]);
       });
     }
     if (!opt.cropOnly) boxes.push([0, 0, W, H]);

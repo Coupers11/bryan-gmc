@@ -204,14 +204,22 @@
   .gate li{margin-bottom:5px}
   .gate button{width:100%;background:var(--red);color:#fff;border:0;border-radius:11px;
     padding:15px;font:700 16px/1 inherit;cursor:pointer}
+  .gate .gate-real{margin:14px 0 0;padding-top:14px;border-top:1px solid var(--line);
+    font-size:13px;text-align:center}
+  .gate .gate-real a{color:var(--red);font-weight:700;text-decoration:none;white-space:nowrap}
+  /* An inline phone number is a ~15px tap target on a phone, which is under every
+     touch guideline going — and on both of these screens it is the only way to
+     actually reach a person. Give them room to be hit. */
+  a.tapnum{display:inline-block;padding:9px 12px;margin:2px -4px;border-radius:8px;
+    background:#fdf3f4;line-height:1.2}
 </style>
 </head>
 <body>
 
 <div class="gate" id="gate">
-  <div class="box">
+  <div class="box" role="dialog" aria-modal="true" aria-labelledby="gateTitle">
     <span class="pill">Demo · Not Live</span>
-    <h3>This is a working preview.</h3>
+    <h3 id="gateTitle">This is a working preview.</h3>
     <p>Click through it exactly like a customer would — every screen, photo tile and
       validation is real.</p>
     <ul>
@@ -220,6 +228,11 @@
       <li>Please don't enter real personal information.</li>
     </ul>
     <button type="button" id="gateGo">Start the walkthrough</button>
+    <!-- The live site's main call to action points here. Anyone who followed it is a
+         real customer trying to get approved, and this screen is where they find out
+         they can't — so it has to hand them a way to reach Bryan, not just a demo. -->
+    <p class="gate-real">Actually want to get started? Call or text Bryan at
+      <a class="tapnum" href="tel:+14632140522">(463) 214-0522</a> — he'll send you a secure link.</p>
   </div>
 </div>
 
@@ -647,7 +660,7 @@
       </ul>
     </div>
     <p style="font-size:14px;color:var(--mut)">Questions before then? Text Bryan directly at
-      <a href="tel:4632140522" style="color:var(--red);font-weight:600">463-214-0522</a>.</p>
+      <a class="tapnum" href="tel:+14632140522" style="color:var(--red);font-weight:600">463-214-0522</a>.</p>
   </section>
 
   </form>
@@ -1108,9 +1121,19 @@
   document.querySelector('[data-k="start"]').appendChild(q);
 
   var gate = document.getElementById("gate");
-  document.getElementById("gateGo").addEventListener("click", function () {
+  var gateGo = document.getElementById("gateGo");
+  function closeGate() {
+    if (gate.hidden) return;
     gate.hidden = true;
+    // Hand focus to the first control behind the sheet rather than dropping it on
+    // <body>, which would put a keyboard user back at the top of the document.
+    nextBt.focus();
+  }
+  gateGo.addEventListener("click", closeGate);
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") closeGate();
   });
+  gateGo.focus();
 
   restore();
   show(0);

@@ -5,3 +5,12 @@
 Process: credit-first. Numbers by text, secure credit application and documents handled remotely, customer arrives and signs in about 20 minutes, or vehicle is delivered.
 Contact: call/text (463) 214-0522
 Two tracks: (1) The Access List — hard-to-find premium builds, on-ground and inbound inventory; (2) Monthly Movers — 3-5 featured units with transparent payments each month.
+
+## Pages
+
+- [Home](index.html): current in-stock GMC and Buick inventory, this month's lease specials, and how the 20-minute process works. Regenerated daily from live dealership stock.
+- [Vehicle detail](vehicles/): one page per in-stock unit, keyed by stock number — photos, equipment, window sticker, and a direct text-to-hold link.
+- [Value your trade](trade.html): guided trade appraisal. VIN scan or entry, condition questions, a guided photo set, then the details go to Bryan by text and he replies with a real number, usually within the hour.
+- [2027 GMC Yukon ordering](order-2027.html): first-round factory allocation board for 2027 Yukon Denali and Denali Ultimate builds. Reserve a build slot by text; no deposit.
+
+Not indexed: express-checkin.html is an unreleased preview of the remote check-in and credit application. It has no backend and accepts no real submissions. Anyone wanting to start a deal should call or text (463) 214-0522.

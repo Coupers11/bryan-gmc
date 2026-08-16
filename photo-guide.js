@@ -119,7 +119,7 @@
     "  border-radius:11px;padding:13px;font:600 14px/1 inherit;cursor:pointer}"
   ].join("");
 
-  var box, cur = null, onTake = null;
+  var box, cur = null, onTake = null, prev = null;
 
   function build() {
     var st = d.createElement("style"); st.textContent = CSS; d.head.appendChild(st);
@@ -138,6 +138,11 @@
     d.body.appendChild(box);
     box.addEventListener("click", function (e) { if (e.target === box) close(); });
     box.querySelector(".pgx-close").addEventListener("click", close);
+    // Tapping outside closed it, but there was no keyboard way out at all — on a
+    // desktop the sheet was a trap once it was open.
+    d.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && !box.hidden) close();
+    });
     box.querySelector(".pgx-btn").addEventListener("click", function () {
       var k = cur, cb = onTake;
       close();
@@ -166,6 +171,7 @@
       s.nos.map(function (t) { return '<li class="no">' + esc(t) + "</li>"; }).join("");
 
     var img = box.querySelector(".pgx-img"), ph = box.querySelector(".pgx-ph");
+    img.alt = "Example of a good " + s.t + " photo";
     // The framing note is already the subtitle directly above this box. Repeating
     // it inside made the sheet read like a stutter, so the placeholder says what
     // it actually is and lets the checklist do the teaching.
@@ -176,15 +182,21 @@
     img.onerror = function () { img.hidden = true;  ph.hidden = false; };
     img.src = "photo-examples/" + s.ex;
 
-    box.querySelector(".pgx-btn").textContent =
-      opt.taken ? "Retake this photo" : "Take this photo";
+    var btn = box.querySelector(".pgx-btn");
+    btn.textContent = opt.taken ? "Retake this photo" : "Take this photo";
     box.hidden = false;
     d.body.style.overflow = "hidden";
+    // aria-modal only tells a screen reader this is a dialog; focus still has to be
+    // moved into it, or the reader carries on announcing the page underneath.
+    prev = d.activeElement;
+    btn.focus();
   }
 
   function close() {
     if (box) box.hidden = true;
     d.body.style.overflow = "";
+    if (prev && prev.focus) prev.focus();
+    prev = null;
   }
 
   w.PhotoGuide = {

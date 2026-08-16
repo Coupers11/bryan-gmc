@@ -1,6 +1,16 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Value Your Trade — Coup's Automotive Solutions</title>
 <meta name="description" content="Get a fair, honest value on your trade — a guided walkthrough, then a real number from Bryan within the hour. No lowball algorithms.">
+<meta name="theme-color" content="#c8102e">
+<!-- This link gets texted to people constantly. Without these the preview is a bare
+     URL, which reads like spam next to every other link in the thread. -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="Value Your Trade — Coup's Automotive Solutions">
+<meta property="og:description" content="A guided walkthrough, then a real number from Bryan within the hour. No lowball algorithms.">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23c8102e'/%3E%3Ctext x='16' y='23' font-family='Helvetica,Arial,sans-serif' font-size='19' font-weight='bold' fill='%23fff' text-anchor='middle'%3EC%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/@zxing/library@0.21.3/umd/index.min.js"></script>
 <!-- Barcode location + decoding. Kept out of this file so it can be tested on real
@@ -50,8 +60,11 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--red)}
 @keyframes pulse{50%{opacity:.5}}
 /* option chips */
 .opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px}
-.opt{border:1.5px solid var(--line);border-radius:12px;padding:16px 14px;cursor:pointer;background:var(--panel);transition:all .15s;text-align:left}
+/* Real <button>s, not clickable <div>s — these are the only control on four of the
+   steps, and a div is unreachable by keyboard and silent to a screen reader. */
+.opt{border:1.5px solid var(--line);border-radius:12px;padding:16px 14px;cursor:pointer;background:var(--panel);transition:all .15s;text-align:left;width:100%;font-family:inherit;color:inherit;display:block}
 .opt:hover{border-color:#c9c4ba}
+.opt:focus-visible{outline:3px solid rgba(200,16,46,.45);outline-offset:2px}
 .opt.sel{border-color:var(--red);background:#fff5f6;box-shadow:0 0 0 3px rgba(200,16,46,.08)}
 .opt .em{font-size:22px;display:block;margin-bottom:6px}
 .opt .t{font-weight:700;font-size:14px}
@@ -104,10 +117,17 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--red)}
 .docitem .dn{flex:1;font-size:13px;font-weight:600}
 .docitem .rm{background:none;border:none;color:var(--mut);font-size:16px;cursor:pointer;padding:4px}
 .hide{display:none!important}
+/* Shown only when the sms: handoff turns out to go nowhere. */
+.fallback{text-align:left;background:var(--panel);border:2px solid var(--red);border-radius:16px;padding:20px;margin-top:20px}
+.fallback b{display:block;font-size:16px;margin-bottom:6px}
+.fallback p{color:var(--mut);font-size:13.5px;margin-bottom:12px}
+.fallback textarea{font-size:13px;line-height:1.45;resize:vertical;background:var(--soft)}
 @media(max-width:440px){.opts{grid-template-columns:1fr}}
 </style></head><body>
 <div class="shell">
-  <div class="bar"><div class="logo">COUP'S <b>TRADE</b></div></div>
+  <!-- The step headings are h2s that swap as the customer moves, so the wordmark is
+       the one heading that is always here. Without it the page had no h1 at all. -->
+  <div class="bar"><h1 class="logo">COUP'S <b>TRADE</b></h1></div>
   <div class="prog"><span id="bar"></span></div>
   <div class="stepn" id="stepn">Getting started</div>
   <div class="stage" id="stage"></div>
@@ -121,6 +141,11 @@ const steps=[
  {id:"photos"},{id:"docs"},{id:"payoff"},{id:"contact"},{id:"done"}
 ];
 const stage=document.getElementById("stage");
+/* render() builds this screen as an HTML string, and two kinds of untrusted text
+   land in it: what the customer typed, and the decoded vehicle description that
+   comes back from the NHTSA API. A stray quote in either one silently breaks the
+   attribute it sits in — so nothing reaches innerHTML unescaped. */
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
 function setProg(){document.getElementById("bar").style.width=(step/(steps.length-1)*100)+"%";
  document.getElementById("stepn").textContent = step===0?"Getting started":step===steps.length-1?"All done":`Step ${step} of ${steps.length-2}`;}
 
@@ -139,16 +164,16 @@ function render(){
   <button class="scanbtn" onclick="openScanner()">📷 Scan My VIN Barcode</button>
   <p class="scan-or">or type it in</p>
   <label class="fld">Vehicle VIN</label>
-  <div class="vinrow"><input id="vin" maxlength="17" placeholder="1GKS2DKL8..." value="${state.vin}" oninput="onVin(this.value)"></div>
+  <div class="vinrow"><input id="vin" maxlength="17" placeholder="1GKS2DKL8..." autocomplete="off" autocapitalize="characters" spellcheck="false" value="${esc(state.vin)}" oninput="onVin(this.value)"></div>
   <div class="decoding" id="dec"><div class="spin"></div> Decoding your vehicle…</div>
   <div class="carcard" id="carcard"></div>
   <button class="skip" onclick="noVin()">I don't have my VIN handy →</button>
   <div class="nav"><button class="btn back" onclick="go(-1)">Back</button><button class="btn next" id="vnext" ${state.car?"":"disabled"} onclick="go(1)">Continue →</button></div></div>`;
  if(s==="mileage") h=`
   <div class="step on"><div class="coach"><span class="ic">📊</span><div>Mileage is the #1 driver of value. Be honest — an accurate number means an accurate offer and no surprises at delivery.</div></div>
-  <h2>How many miles?</h2><p class="hint">${state.car||"Your vehicle"}</p>
-  <label class="fld">Odometer reading</label>
-  <input id="mileage" type="tel" inputmode="numeric" placeholder="e.g. 42,500" value="${state.mileage}" oninput="state.mileage=this.value;document.getElementById('mnext').disabled=!this.value">
+  <h2>How many miles?</h2><p class="hint">${esc(state.car)||"Your vehicle"}</p>
+  <label class="fld" for="mileage">Odometer reading</label>
+  <input id="mileage" type="tel" inputmode="numeric" placeholder="e.g. 42,500" value="${esc(state.mileage)}" oninput="state.mileage=this.value;document.getElementById('mnext').disabled=!this.value">
   <div class="nav"><button class="btn back" onclick="go(-1)">Back</button><button class="btn next" id="mnext" ${state.mileage?"":"disabled"} onclick="go(1)">Continue →</button></div></div>`;
  if(s==="exterior") h=optStep("exterior","How's the outside look?","Paint, body, glass — pick the closest.",[
    ["🌟","Excellent","Like new, no issues"],["👍","Good","Minor wear, a scratch or two"],
@@ -187,35 +212,35 @@ function render(){
   <div class="step on"><div class="coach"><span class="ic">💳</span><div>If you still owe on it, that's totally normal — knowing your payoff lets Bryan structure the whole deal, trade equity and all.</div></div>
   <h2>Do you still owe on it?</h2><p class="hint">Optional, but it helps us build your real numbers.</p>
   <div class="opts" style="margin-bottom:16px">
-   <div class="opt ${state.owe==='yes'?'sel':''}" onclick="setOwe('yes')"><span class="em">📄</span><div class="t">Yes, there's a loan/lease</div></div>
-   <div class="opt ${state.owe==='no'?'sel':''}" onclick="setOwe('no')"><span class="em">✅</span><div class="t">No, it's paid off</div></div>
+   <button type="button" class="opt ${state.owe==='yes'?'sel':''}" aria-pressed="${state.owe==='yes'}" onclick="setOwe('yes')"><span class="em">📄</span><div class="t">Yes, there's a loan/lease</div></button>
+   <button type="button" class="opt ${state.owe==='no'?'sel':''}" aria-pressed="${state.owe==='no'}" onclick="setOwe('no')"><span class="em">✅</span><div class="t">No, it's paid off</div></button>
   </div>
   <div id="payfields" class="${state.owe==='yes'?'':'hide'}">
-   <label class="fld">Lender (optional)</label><input placeholder="e.g. GM Financial" value="${state.lender}" oninput="state.lender=this.value">
-   <label class="fld">Approximate payoff (optional)</label><input type="tel" inputmode="numeric" placeholder="e.g. $18,400" value="${state.payoff}" oninput="state.payoff=this.value">
+   <label class="fld" for="lender">Lender (optional)</label><input id="lender" placeholder="e.g. GM Financial" value="${esc(state.lender)}" oninput="state.lender=this.value">
+   <label class="fld" for="payoff">Approximate payoff (optional)</label><input id="payoff" type="tel" inputmode="numeric" placeholder="e.g. $18,400" value="${esc(state.payoff)}" oninput="state.payoff=this.value">
   </div>
   <div class="nav"><button class="btn back" onclick="go(-1)">Back</button><button class="btn next" onclick="go(1)">Continue →</button></div></div>`;
  if(s==="contact") h=`
   <div class="step on"><div class="coach"><span class="ic">⏱️</span><div>Last step! Bryan reviews every trade personally and texts a real number — usually within the hour.</div></div>
   <h2>Where do I send your number?</h2>
-  <label class="fld">Your name</label><input placeholder="First & last" value="${state.name}" oninput="state.name=this.value;chkC()">
-  <label class="fld">Cell phone</label><input type="tel" inputmode="tel" placeholder="(317) 555-0100" value="${state.phone}" oninput="state.phone=this.value;chkC()">
-  <label class="fld">Email (optional)</label><input type="email" placeholder="you@email.com" value="${state.email}" oninput="state.email=this.value">
-  <label class="fld">Best time to reach you</label>
-  <select onchange="state.when=this.value"><option value="">Anytime</option><option>Morning</option><option>Afternoon</option><option>Evening</option></select>
+  <label class="fld" for="cname">Your name</label><input id="cname" autocomplete="name" placeholder="First &amp; last" value="${esc(state.name)}" oninput="state.name=this.value;chkC()">
+  <label class="fld" for="cphone">Cell phone</label><input id="cphone" type="tel" inputmode="tel" autocomplete="tel" placeholder="(317) 555-0100" value="${esc(state.phone)}" oninput="state.phone=this.value;chkC()">
+  <label class="fld" for="cemail">Email (optional)</label><input id="cemail" type="email" inputmode="email" autocomplete="email" placeholder="you@email.com" value="${esc(state.email)}" oninput="state.email=this.value">
+  <label class="fld" for="cwhen">Best time to reach you</label>
+  <select id="cwhen" onchange="state.when=this.value"><option value="">Anytime</option><option ${state.when==='Morning'?'selected':''}>Morning</option><option ${state.when==='Afternoon'?'selected':''}>Afternoon</option><option ${state.when==='Evening'?'selected':''}>Evening</option></select>
   <div class="nav"><button class="btn back" onclick="go(-1)">Back</button><button class="btn next" id="cnext" ${state.name&&state.phone?"":"disabled"} onclick="finish()">Get My Trade Value →</button></div></div>`;
  if(s==="done"){
   const photolist=Object.keys(state.photos).filter(k=>state.photos[k]);
   h=`<div class="step on reveal"><div class="big">🎯</div><h2>Got it — you're all set!</h2>
-   <p><b>${state.name.split(' ')[0]||'You'}</b>, Bryan is personally reviewing your ${state.car||'trade'} right now.</p>
+   <p><b>${esc(state.name.split(' ')[0])||'You'}</b>, Bryan is personally reviewing your ${esc(state.car)||'trade'} right now.</p>
    <p>Expect a real, fair number by text — usually within the hour.</p>
    <div class="card">
-    <div class="row"><span class="k">Vehicle</span><span class="v">${state.car||'—'}</span></div>
-    <div class="row"><span class="k">Miles</span><span class="v">${state.mileage||'—'}</span></div>
-    <div class="row"><span class="k">Condition</span><span class="v">${state.cond.exterior||'—'} / ${state.cond.mech||'—'}</span></div>
+    <div class="row"><span class="k">Vehicle</span><span class="v">${esc(state.car)||'—'}</span></div>
+    <div class="row"><span class="k">Miles</span><span class="v">${esc(state.mileage)||'—'}</span></div>
+    <div class="row"><span class="k">Condition</span><span class="v">${esc(state.cond.exterior)||'—'} / ${esc(state.cond.mech)||'—'}</span></div>
     <div class="row"><span class="k">Photos ready</span><span class="v">${photolist.length}/${PhotoGuide.SHOTS.length}</span></div>
     <div class="row"><span class="k">Documents</span><span class="v">${state.docs.length?state.docs.length+" attached":"none"}</span></div>
-    <div class="row"><span class="k">Payoff</span><span class="v">${state.owe==='yes'?(state.payoff||'has loan'):'paid off'}</span></div>
+    <div class="row"><span class="k">Payoff</span><span class="v">${state.owe==='yes'?(esc(state.payoff)||'has loan'):'paid off'}</span></div>
    </div>
    ${photolist.length?`<div class="note">📎 Almost done — tap the button, then <b>attach the ${photolist.length} photo${photolist.length>1?'s':''} you just took</b> in your messages so Bryan can finalize your number.</div>`:''}
    <button class="btn next" style="width:100%" onclick="sendToBryan()">💬 Send My Trade to Bryan</button>
@@ -224,10 +249,11 @@ function render(){
  }
  stage.innerHTML=h;
  if(s==="vin"){const c=document.getElementById("carcard");if(state.car){c.style.display="block";c.innerHTML=carHTML();}}
+ saveState();
 }
 function optStep(key,title,hint,opts){
  return `<div class="step on"><h2>${title}</h2><p class="hint">${hint}</p><div class="opts">${
-  opts.map(o=>`<div class="opt ${state.cond[key]===o[1]?'sel':''}" onclick="pick('${key}','${o[1]}')"><span class="em">${o[0]}</span><div class="t">${o[1]}</div><div class="s">${o[2]}</div></div>`).join('')
+  opts.map(o=>`<button type="button" class="opt ${state.cond[key]===o[1]?'sel':''}" aria-pressed="${state.cond[key]===o[1]}" onclick="pick('${key}','${o[1]}')"><span class="em">${o[0]}</span><div class="t">${o[1]}</div><div class="s">${o[2]}</div></button>`).join('')
  }</div><div class="nav"><button class="btn back" onclick="go(-1)">Back</button><button class="btn next" id="onext" ${state.cond[key]?'':'disabled'} onclick="go(1)">Continue →</button></div></div>`;
 }
 /* Takes a shot straight off PhotoGuide.SHOTS so the label, the hint and the icon
@@ -393,8 +419,8 @@ function bodyEmoji(){const b=state.body||'';if(b.includes('pickup')||b.includes(
 function carHTML(){
  const mk=encodeURIComponent(state.make),md=encodeURIComponent((state.model||'').split(' ')[0]);
  const img=mk&&md?`https://cdn.imagin.studio/getImage?customer=hrjavascript-mastery&make=${mk}&modelFamily=${md}&angle=23&width=560`:'';
- const pic=img?`<div class="carimg"><img src="${img}" alt="${state.car}" onload="this.parentNode.classList.add('loaded')" onerror="this.parentNode.innerHTML='<div class=silh>'+bodyEmoji()+'</div>'"><div class="silh sk">${bodyEmoji()}</div></div>`:`<div class="carimg loaded"><div class="silh">${bodyEmoji()}</div></div>`;
- return `${pic}<div class="yr">${state.car}</div><div class="dt">${state.cardetail||''}</div><div class="chk">✓ That's your ride — let's value it</div>`;
+ const pic=img?`<div class="carimg"><img src="${img}" alt="${esc(state.car)}" loading="lazy" onload="this.parentNode.classList.add('loaded')" onerror="this.parentNode.innerHTML='<div class=silh>'+bodyEmoji()+'</div>'"><div class="silh sk">${bodyEmoji()}</div></div>`:`<div class="carimg loaded"><div class="silh">${bodyEmoji()}</div></div>`;
+ return `${pic}<div class="yr">${esc(state.car)}</div><div class="dt">${esc(state.cardetail||'')}</div><div class="chk">✓ That's your ride — let's value it</div>`;
 }
 async function decode(vin,advance){
  const dec=document.getElementById('dec');dec.style.display='flex';
@@ -414,7 +440,8 @@ async function decode(vin,advance){
 }
 function go(d){step=Math.max(0,Math.min(steps.length-1,step+d));window.scrollTo(0,0);render();}
 function finish(){go(1);}
-function sendToBryan(){
+
+function tradeMessage(){
  const L=[];
  L.push("🚗 NEW TRADE from my website:");
  L.push("Vehicle: "+(state.car||"—"));
@@ -427,9 +454,80 @@ function sendToBryan(){
  const pc=Object.keys(state.photos).filter(k=>state.photos[k]).length;
  if(pc)L.push("("+pc+" photos attached below)");
  if(state.docs.length)L.push("("+state.docs.length+" document(s) to attach)");
- const body=encodeURIComponent(L.join("\n"));
- window.location.href=`sms:${SMS}?&body=${body}`;
+ return L.join("\n");
 }
+
+/* An sms: link is the whole handoff, and on anything without a messaging app —
+   any desktop browser, most tablets — the navigation is swallowed with no error
+   and no page change. The customer finishes all ten steps, taps the button, and
+   watches nothing happen; the lead is simply gone and neither side knows it.
+   So: fire the link, then check whether we actually went anywhere. If the page is
+   still sitting here a moment later, hand them the message to copy and the number
+   to dial. */
+function sendToBryan(){
+ const msg=tradeMessage();
+ let left=false;
+ const mark=()=>{left=true;};
+ document.addEventListener("visibilitychange",mark);
+ window.addEventListener("pagehide",mark);
+ window.addEventListener("blur",mark);
+ try{window.location.href=`sms:${SMS}?&body=${encodeURIComponent(msg)}`;}catch(e){left=false;}
+ setTimeout(()=>{
+  document.removeEventListener("visibilitychange",mark);
+  window.removeEventListener("pagehide",mark);
+  window.removeEventListener("blur",mark);
+  if(!left&&!document.hidden)showFallback(msg);
+ },1500);
+}
+
+function showFallback(msg){
+ if(document.getElementById("fb"))return;
+ const box=document.createElement("div");
+ box.className="fallback";box.id="fb";
+ box.innerHTML=`<b>This device can't send a text.</b>
+  <p>No problem — copy your details below and send them to Bryan however you like, or just call.</p>
+  <textarea id="fbtext" readonly rows="8"></textarea>
+  <button type="button" class="btn next" id="fbcopy" style="width:100%;margin-bottom:10px">📋 Copy My Details</button>
+  <a class="btn back" style="width:100%;justify-content:center" href="tel:${SMS}">📞 Call Bryan — (463) 214-0522</a>`;
+ const host=document.querySelector(".reveal")||stage;
+ host.appendChild(box);
+ document.getElementById("fbtext").value=msg;
+ document.getElementById("fbcopy").addEventListener("click",function(){
+  const t=document.getElementById("fbtext"),b=this;
+  const done=()=>{b.textContent="✓ Copied — now paste it to Bryan";};
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+   navigator.clipboard.writeText(t.value).then(done,()=>{t.select();done();});
+  }else{t.select();try{document.execCommand("copy");}catch(e){}done();}
+ });
+ box.scrollIntoView({behavior:"smooth",block:"center"});
+}
+
+/* ── resume ────────────────────────────────────────────────────────────────
+   Somebody fills this in standing next to the car. A phone call, a lock screen
+   or a stray back-swipe used to wipe all ten steps with nothing to recover.
+   Text answers only — photos are data URLs and would blow the storage quota —
+   so a resumed session comes back to the photo step and reshoots from there. */
+const SAVE_KEY="coup_trade_v1";
+const TEXT_KEYS=["vin","car","cardetail","make","model","body","mileage","owe","lender","payoff","name","phone","email","when"];
+function saveState(){
+ try{
+  const d={step:step,cond:state.cond};
+  TEXT_KEYS.forEach(k=>d[k]=state[k]);
+  localStorage.setItem(SAVE_KEY,JSON.stringify(d));
+ }catch(e){}
+}
+function restoreState(){
+ let d;
+ try{d=JSON.parse(localStorage.getItem(SAVE_KEY)||"null");}catch(e){return;}
+ if(!d)return;
+ TEXT_KEYS.forEach(k=>{if(typeof d[k]==="string")state[k]=d[k];});
+ if(d.cond&&typeof d.cond==="object")state.cond=d.cond;
+ // Never resume past the photo step: the photos themselves could not be saved,
+ // and never onto the confirmation, which would claim a send that never happened.
+ const cap=steps.findIndex(s=>s.id==="photos");
+ if(typeof d.step==="number"&&d.step>0)step=Math.min(d.step,cap);
+}
+restoreState();
 render();
 </script>
 <div class="scanwrap" id="scanwrap">
